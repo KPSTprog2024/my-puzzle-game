@@ -8,7 +8,7 @@ class SelectionScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // タイトル
-        this.add.text(width / 2, height / 4 + height * 0.2, 'ひょうじじかんをえらんでね', {
+        this.add.text(width / 2, height * 0.2, 'ひょうじじかんをえらんでね', {
             fontSize: `${height * 0.04}px`,
             fill: '#000',
             align: 'center',
@@ -22,20 +22,20 @@ class SelectionScene extends Phaser.Scene {
         ];
 
         const buttonWidth = width * 0.25;  // ボタンの幅を画面幅の25%
-        const buttonHeight = height * 0.1; // ボタンの高さを画面高さの10%
+        const buttonHeight = height * 0.08; // ボタンの高さを画面高さの8%
         const buttonSpacing = width * 0.05; // ボタン間のスペースを画面幅の5%
 
         // タイル形式（横並び）にボタンを配置
         const totalWidth = times.length * buttonWidth + (times.length - 1) * buttonSpacing;
         let startX = (width - totalWidth) / 2 + buttonWidth / 2;
-        const startY = height / 2 + height * 0.1; // ボタンのY座標を調整
+        const startY = height / 2;
 
         times.forEach((time, index) => {
             const button = this.add.text(startX + index * (buttonWidth + buttonSpacing), startY, time.label, {
                 fontSize: `${height * 0.03}px`,
                 fill: '#fff',
                 backgroundColor: '#2196F3',
-                padding: { x: 20, y: 10 }, // 内部パディングを調整
+                padding: { x: 20, y: 10 },
                 borderRadius: 10,
                 align: 'center',
                 wordWrap: { width: buttonWidth - 40 }
@@ -44,7 +44,7 @@ class SelectionScene extends Phaser.Scene {
             .setInteractive()
             .setFixedSize(buttonWidth, buttonHeight);
 
-            // 視覚的な強調: ホバー時のハイライト
+            // ホバー時のハイライト
             button.on('pointerover', () => {
                 button.setStyle({ backgroundColor: '#1976D2' });
             });
@@ -53,7 +53,7 @@ class SelectionScene extends Phaser.Scene {
                 button.setStyle({ backgroundColor: '#2196F3' });
             });
 
-            // 視覚的な強調: ボタンクリック時のアニメーション
+            // ボタンクリック時のアニメーション
             button.on('pointerdown', () => {
                 this.tweens.add({
                     targets: button,
@@ -91,7 +91,7 @@ class CountdownScene extends Phaser.Scene {
             align: 'center'
         }).setOrigin(0.5);
 
-        // 視覚的な強調: カウントダウン数字にアニメーションを追加
+        // カウントダウン数字にアニメーションを追加
         this.tweens.add({
             targets: this.countText,
             scale: { from: 1, to: 1.5 },
@@ -396,7 +396,7 @@ class ClearScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // クリアテキスト
-        this.add.text(width / 2, height / 3 + height * 0.15, 'クリア！', {
+        this.add.text(width / 2, height * 0.3, 'クリア！', {
             fontSize: `${height * 0.05}px`,
             fill: '#FFD700',
             align: 'center',
@@ -405,7 +405,7 @@ class ClearScene extends Phaser.Scene {
 
         // ランダムメッセージ
         const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
-        this.add.text(width / 2, height / 2 + height * 0.15, randomMessage, {
+        this.add.text(width / 2, height / 2, randomMessage, {
             fontSize: `${height * 0.035}px`,
             fill: '#000',
             align: 'center',
@@ -432,7 +432,7 @@ class ClearScene extends Phaser.Scene {
         }
 
         // 「つぎのれべる」ボタン
-        const nextLevelButton = this.add.text(width / 2, height / 2 + height * 0.3, 'つぎのれべる', {
+        const nextLevelButton = this.add.text(width / 2, height * 0.65, 'つぎのれべる', {
             fontSize: `${height * 0.035}px`,
             fill: '#fff',
             backgroundColor: '#4CAF50',
@@ -442,7 +442,7 @@ class ClearScene extends Phaser.Scene {
             wordWrap: { width: width * 0.3 }
         }).setOrigin(0.5).setInteractive();
 
-        // 視覚的な強調: ホバー時のハイライト
+        // ホバー時のハイライト
         nextLevelButton.on('pointerover', () => {
             nextLevelButton.setStyle({ backgroundColor: '#388E3C' });
         });
@@ -451,7 +451,7 @@ class ClearScene extends Phaser.Scene {
             nextLevelButton.setStyle({ backgroundColor: '#4CAF50' });
         });
 
-        // 視覚的な強調: ボタンクリック時のアニメーション
+        // ボタンクリック時のアニメーション
         nextLevelButton.on('pointerdown', () => {
             this.tweens.add({
                 targets: nextLevelButton,
@@ -482,7 +482,7 @@ class RetryScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // ゲームオーバーのテキスト
-        this.add.text(width / 2, height / 4 + height * 0.15, 'がーむおーばー', {
+        this.add.text(width / 2, height * 0.3, 'がーむおーばー', {
             fontSize: `${height * 0.05}px`,
             fill: '#FF0000',
             align: 'center',
@@ -539,7 +539,7 @@ class RetryScene extends Phaser.Scene {
         }
 
         // 「もういちど」ボタン
-        const retryButton = this.add.text(width / 2, height / 2 + height * 0.3, 'もういちど', {
+        const retryButton = this.add.text(width / 2, height * 0.65, 'もういちど', {
             fontSize: `${height * 0.035}px`,
             fill: '#fff',
             backgroundColor: '#FF5722',
@@ -549,7 +549,7 @@ class RetryScene extends Phaser.Scene {
             wordWrap: { width: width * 0.3 }
         }).setOrigin(0.5).setInteractive();
 
-        // 視覚的な強調: ホバー時のハイライト
+        // ホバー時のハイライト
         retryButton.on('pointerover', () => {
             retryButton.setStyle({ backgroundColor: '#D84315' });
         });
@@ -558,7 +558,7 @@ class RetryScene extends Phaser.Scene {
             retryButton.setStyle({ backgroundColor: '#FF5722' });
         });
 
-        // 視覚的な強調: ボタンクリック時のアニメーション
+        // ボタンクリック時のアニメーション
         retryButton.on('pointerdown', () => {
             this.tweens.add({
                 targets: retryButton,
@@ -571,7 +571,7 @@ class RetryScene extends Phaser.Scene {
         });
 
         // 「さいしょから」ボタン
-        const restartButton = this.add.text(width / 2, height / 2 + height * 0.45, 'さいしょから', {
+        const restartButton = this.add.text(width / 2, height * 0.8, 'さいしょから', {
             fontSize: `${height * 0.035}px`,
             fill: '#fff',
             backgroundColor: '#2196F3',
@@ -581,7 +581,7 @@ class RetryScene extends Phaser.Scene {
             wordWrap: { width: width * 0.3 }
         }).setOrigin(0.5).setInteractive();
 
-        // 視覚的な強調: ホバー時のハイライト
+        // ホバー時のハイライト
         restartButton.on('pointerover', () => {
             restartButton.setStyle({ backgroundColor: '#1976D2' });
         });
@@ -590,7 +590,7 @@ class RetryScene extends Phaser.Scene {
             restartButton.setStyle({ backgroundColor: '#2196F3' });
         });
 
-        // 視覚的な強調: ボタンクリック時のアニメーション
+        // ボタンクリック時のアニメーション
         restartButton.on('pointerdown', () => {
             this.tweens.add({
                 targets: restartButton,
@@ -642,8 +642,10 @@ const config = {
     backgroundColor: '#f0f8ff',
     scene: [SelectionScene, CountdownScene, GameScene, ClearScene, RetryScene],
     scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: window.innerWidth,
+        height: window.innerHeight
     }
 };
 
