@@ -8,7 +8,7 @@ class SelectionScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // タイトル
-        this.add.text(width / 2, height / 4, 'ひょうじじかんをえらんでね', {
+        this.add.text(width / 2, height / 4 + 50, 'ひょうじじかんをえらんでね', { // Y座標を調整
             fontSize: '48px',
             fill: '#000'
         }).setOrigin(0.5);
@@ -301,7 +301,7 @@ class ClearScene extends Phaser.Scene {
         }
 
         // 「つぎのれべる」ボタン
-        const nextLevelButton = this.add.text(width / 2, height / 2 + 100, 'つぎのれべる', {
+        const nextLevelButton = this.add.text(width / 2, height / 2 + 150, 'つぎのれべる', { // ボタンのY座標を調整
             fontSize: '48px',
             fill: '#fff',
             backgroundColor: '#4CAF50',
