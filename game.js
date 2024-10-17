@@ -549,7 +549,6 @@ class RetryScene extends Phaser.Scene {
                 duration: 100
             });
 
-            // 'GameScene' ではなく 'CountdownScene' を開始するように変更
             this.scene.start('CountdownScene', { displayTime: this.displayTime, level: this.level });
         });
 
