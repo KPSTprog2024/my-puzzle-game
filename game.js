@@ -8,9 +8,11 @@ class SelectionScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // タイトル
-        this.add.text(width / 2, height / 4 + 150, 'ひょうじじかんをえらんでね', {
-            fontSize: '48px',
-            fill: '#000'
+        this.add.text(width / 2, height / 4 + height * 0.2, 'ひょうじじかんをえらんでね', {
+            fontSize: `${height * 0.04}px`,
+            fill: '#000',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
         }).setOrigin(0.5);
 
         const times = [
@@ -19,30 +21,28 @@ class SelectionScene extends Phaser.Scene {
             { label: '3びょう', value: 3000 }
         ];
 
-        const buttonWidth = width * 0.2;  // ボタンの幅を画面幅の20%
+        const buttonWidth = width * 0.25;  // ボタンの幅を画面幅の25%
         const buttonHeight = height * 0.1; // ボタンの高さを画面高さの10%
         const buttonSpacing = width * 0.05; // ボタン間のスペースを画面幅の5%
 
         // タイル形式（横並び）にボタンを配置
         const totalWidth = times.length * buttonWidth + (times.length - 1) * buttonSpacing;
         let startX = (width - totalWidth) / 2 + buttonWidth / 2;
-        const startY = height / 2 + 50; // ボタンのY座標を調整
+        const startY = height / 2 + height * 0.1; // ボタンのY座標を調整
 
         times.forEach((time, index) => {
             const button = this.add.text(startX + index * (buttonWidth + buttonSpacing), startY, time.label, {
-                fontSize: '36px',
+                fontSize: `${height * 0.03}px`,
                 fill: '#fff',
                 backgroundColor: '#2196F3',
-                padding: { x: 10, y: 10 }, // 内部パディングを調整
+                padding: { x: 20, y: 10 }, // 内部パディングを調整
                 borderRadius: 10,
-                align: 'center'
+                align: 'center',
+                wordWrap: { width: buttonWidth - 40 }
             })
             .setOrigin(0.5)
             .setInteractive()
-            .setFixedSize(buttonWidth, buttonHeight) // ボタンのサイズを固定
-            .setStyle({ // テキストの中央揃え
-                align: 'center'
-            });
+            .setFixedSize(buttonWidth, buttonHeight);
 
             // 視覚的な強調: ホバー時のハイライト
             button.on('pointerover', () => {
@@ -86,8 +86,9 @@ class CountdownScene extends Phaser.Scene {
         this.drawGrid();
 
         this.countText = this.add.text(width / 2, height / 2, this.count, {
-            fontSize: '100px',
-            fill: '#FF0000'
+            fontSize: `${height * 0.1}px`,
+            fill: '#FF0000',
+            align: 'center'
         }).setOrigin(0.5);
 
         // 視覚的な強調: カウントダウン数字にアニメーションを追加
@@ -170,10 +171,10 @@ class GameScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // レベル表示
-        this.add.text(50, 50, `れべる: ${this.level}`, {
-            fontSize: '32px',
+        this.add.text(width * 0.05, height * 0.05, `れべる: ${this.level}`, {
+            fontSize: `${height * 0.025}px`,
             fill: '#000'
-        });
+        }).setOrigin(0, 0);
 
         // グリッドの描画
         this.drawGrid();
@@ -280,11 +281,13 @@ class GameScene extends Phaser.Scene {
 
             // 数字のテキストオブジェクトを作成
             const numberText = this.add.text(cell.x + cell.width / 2, cell.y + cell.height / 2, num, {
-                fontSize: '48px',
+                fontSize: `${cell.height * 0.3}px`,
                 fill: '#fff',
                 backgroundColor: '#FF5722',
-                padding: { x: 20, y: 20 },
-                borderRadius: 10
+                padding: { x: 10, y: 10 },
+                borderRadius: 5,
+                align: 'center',
+                wordWrap: { width: cell.width * 0.8 }
             }).setOrigin(0.5);
             cell.object = numberText;
         });
@@ -347,12 +350,14 @@ class GameScene extends Phaser.Scene {
             // 間違ったクリック
             this.wrongCells.push({ row, col });
             // 視覚的な強調: 間違ったクリック時にエラーアニメーション
-            this.tweens.add({
-                targets: clickedCell.object,
-                scale: { from: 1, to: 0.8 },
-                yoyo: true,
-                duration: 200
-            });
+            if (clickedCell.object) {
+                this.tweens.add({
+                    targets: clickedCell.object,
+                    scale: { from: 1, to: 0.8 },
+                    yoyo: true,
+                    duration: 200
+                });
+            }
 
             this.scene.start('RetryScene', { 
                 displayTime: this.displayTime, 
@@ -391,16 +396,20 @@ class ClearScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // クリアテキスト
-        this.add.text(width / 2, height / 3 + 150, 'クリア！', {
-            fontSize: '64px',
-            fill: '#FFD700'
+        this.add.text(width / 2, height / 3 + height * 0.15, 'クリア！', {
+            fontSize: `${height * 0.05}px`,
+            fill: '#FFD700',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
         }).setOrigin(0.5);
 
         // ランダムメッセージ
         const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
-        this.add.text(width / 2, height / 2 + 150, randomMessage, {
-            fontSize: '48px',
-            fill: '#000'
+        this.add.text(width / 2, height / 2 + height * 0.15, randomMessage, {
+            fontSize: `${height * 0.035}px`,
+            fill: '#000',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
         }).setOrigin(0.5);
 
         // エフェクト（簡易的な花火）
@@ -423,12 +432,14 @@ class ClearScene extends Phaser.Scene {
         }
 
         // 「つぎのれべる」ボタン
-        const nextLevelButton = this.add.text(width / 2, height / 2 + 250, 'つぎのれべる', {
-            fontSize: '48px',
+        const nextLevelButton = this.add.text(width / 2, height / 2 + height * 0.3, 'つぎのれべる', {
+            fontSize: `${height * 0.035}px`,
             fill: '#fff',
             backgroundColor: '#4CAF50',
             padding: { x: 20, y: 10 },
-            borderRadius: 10
+            borderRadius: 10,
+            align: 'center',
+            wordWrap: { width: width * 0.3 }
         }).setOrigin(0.5).setInteractive();
 
         // 視覚的な強調: ホバー時のハイライト
@@ -471,9 +482,11 @@ class RetryScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // ゲームオーバーのテキスト
-        this.add.text(width / 2, height / 4 + 150, 'がーむおーばー', {
-            fontSize: '64px',
-            fill: '#FF0000'
+        this.add.text(width / 2, height / 4 + height * 0.15, 'がーむおーばー', {
+            fontSize: `${height * 0.05}px`,
+            fill: '#FF0000',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
         }).setOrigin(0.5);
 
         // グリッドの描画
@@ -483,11 +496,13 @@ class RetryScene extends Phaser.Scene {
         this.grid.forEach(cell => {
             if (cell.number !== null) { // 正しい数字が設定されている場合
                 const numberText = this.add.text(cell.x + cell.width / 2, cell.y + cell.height / 2, cell.number, {
-                    fontSize: '48px',
+                    fontSize: `${cell.height * 0.3}px`,
                     fill: '#fff',
                     backgroundColor: '#FF5722',
-                    padding: { x: 20, y: 20 },
-                    borderRadius: 10
+                    padding: { x: 10, y: 10 },
+                    borderRadius: 5,
+                    align: 'center',
+                    wordWrap: { width: cell.width * 0.8 }
                 }).setOrigin(0.5);
             }
         });
@@ -497,8 +512,9 @@ class RetryScene extends Phaser.Scene {
             const cell = this.grid.find(c => c.row === wrongCell.row && c.col === wrongCell.col);
             if (cell) {
                 this.add.text(cell.x + cell.width / 2, cell.y + cell.height / 2, '×', {
-                    fontSize: '64px',
-                    fill: '#FF0000'
+                    fontSize: `${height * 0.05}px`,
+                    fill: '#FF0000',
+                    align: 'center'
                 }).setOrigin(0.5);
             }
         });
@@ -523,12 +539,14 @@ class RetryScene extends Phaser.Scene {
         }
 
         // 「もういちど」ボタン
-        const retryButton = this.add.text(width / 2, height / 2 + 250, 'もういちど', {
-            fontSize: '48px',
+        const retryButton = this.add.text(width / 2, height / 2 + height * 0.3, 'もういちど', {
+            fontSize: `${height * 0.035}px`,
             fill: '#fff',
             backgroundColor: '#FF5722',
             padding: { x: 20, y: 10 },
-            borderRadius: 10
+            borderRadius: 10,
+            align: 'center',
+            wordWrap: { width: width * 0.3 }
         }).setOrigin(0.5).setInteractive();
 
         // 視覚的な強調: ホバー時のハイライト
@@ -553,12 +571,14 @@ class RetryScene extends Phaser.Scene {
         });
 
         // 「さいしょから」ボタン
-        const restartButton = this.add.text(width / 2, height / 2 + 350, 'さいしょから', {
-            fontSize: '48px',
+        const restartButton = this.add.text(width / 2, height / 2 + height * 0.45, 'さいしょから', {
+            fontSize: `${height * 0.035}px`,
             fill: '#fff',
             backgroundColor: '#2196F3',
             padding: { x: 20, y: 10 },
-            borderRadius: 10
+            borderRadius: 10,
+            align: 'center',
+            wordWrap: { width: width * 0.3 }
         }).setOrigin(0.5).setInteractive();
 
         // 視覚的な強調: ホバー時のハイライト
