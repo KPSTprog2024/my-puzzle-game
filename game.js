@@ -8,7 +8,7 @@ class SelectionScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // タイトル
-        this.add.text(width / 2, height / 4 + 50, 'ひょうじじかんをえらんでね', { // Y座標を調整
+        this.add.text(width / 2, height / 4 + 100, 'ひょうじじかんをえらんでね', { // Y座標をさらに下げる
             fontSize: '48px',
             fill: '#000'
         }).setOrigin(0.5);
@@ -19,14 +19,39 @@ class SelectionScene extends Phaser.Scene {
             { label: '3びょう', value: 3000 }
         ];
 
+        const buttonWidth = width * 0.2;  // ボタンの幅を画面幅の20%
+        const buttonHeight = height * 0.1; // ボタンの高さを画面高さの10%
+        const buttonSpacing = width * 0.05; // ボタン間のスペースを画面幅の5%
+
+        // タイル形式（横並び）にボタンを配置
+        const totalWidth = times.length * buttonWidth + (times.length - 1) * buttonSpacing;
+        let startX = (width - totalWidth) / 2 + buttonWidth / 2;
+        const startY = height / 2 + 50; // ボタンのY座標を調整
+
         times.forEach((time, index) => {
-            const button = this.add.text(width / 2, height / 2 + index * 100, time.label, {
+            const button = this.add.text(startX + index * (buttonWidth + buttonSpacing), startY, time.label, {
                 fontSize: '36px',
                 fill: '#fff',
                 backgroundColor: '#2196F3',
-                padding: { x: 20, y: 10 },
-                borderRadius: 10
-            }).setOrigin(0.5).setInteractive();
+                padding: { x: 10, y: 10 }, // 内部パディングを調整
+                borderRadius: 10,
+                align: 'center'
+            })
+            .setOrigin(0.5)
+            .setInteractive()
+            .setFixedSize(buttonWidth, buttonHeight) // ボタンのサイズを固定
+            .setStyle({ // テキストの中央揃え
+                align: 'center'
+            });
+
+            // 視覚的な強調: ホバー時のハイライト
+            button.on('pointerover', () => {
+                button.setStyle({ backgroundColor: '#1976D2' });
+            });
+
+            button.on('pointerout', () => {
+                button.setStyle({ backgroundColor: '#2196F3' });
+            });
 
             button.on('pointerdown', () => {
                 this.scene.start('CountdownScene', { displayTime: time.value, level: 1 });
@@ -50,10 +75,22 @@ class CountdownScene extends Phaser.Scene {
         const { width, height } = this.scale;
         this.count = 3;
 
+        // カウントダウン用グリッド
+        this.drawGrid();
+
         this.countText = this.add.text(width / 2, height / 2, this.count, {
             fontSize: '100px',
             fill: '#FF0000'
         }).setOrigin(0.5);
+
+        // 視覚的な強調: カウントダウン数字にアニメーションを追加
+        this.tweens.add({
+            targets: this.countText,
+            scale: { from: 1, to: 1.5 },
+            yoyo: true,
+            repeat: -1,
+            duration: 500
+        });
 
         this.timeEvent = this.time.addEvent({
             delay: 1000,
@@ -69,8 +106,40 @@ class CountdownScene extends Phaser.Scene {
             this.countText.setText(this.count);
         } else {
             this.timeEvent.remove(false);
+            // カウントダウン終了時にアニメーションを停止
+            this.tweens.killTweensOf(this.countText);
+            this.countText.destroy();
             this.scene.start('GameScene', { displayTime: this.displayTime, level: this.level });
         }
+    }
+
+    drawGrid() {
+        const { width, height } = this.scale;
+        const gridWidth = width * 0.8;
+        const gridHeight = height * 0.8;
+        const startX = (width - gridWidth) / 2;
+        const startY = (height - gridHeight) / 2;
+        const gridSize = 5;
+        const cellWidth = gridWidth / gridSize;
+        const cellHeight = gridHeight / gridSize;
+
+        // グリッドの線を描画
+        const graphics = this.add.graphics();
+        graphics.lineStyle(2, 0x000000, 1);
+
+        // 縦線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX + i * cellWidth, startY);
+            graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
+        }
+
+        // 横線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX, startY + i * cellHeight);
+            graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
+        }
+
+        graphics.strokePath();
     }
 }
 
@@ -148,6 +217,15 @@ class GameScene extends Phaser.Scene {
                     .setRectangleDropZone(cellWidth, cellHeight)
                     .setInteractive();
 
+                // 視覚的な強調: ホバー時のハイライト
+                zone.on('pointerover', () => {
+                    zone.setAlpha(0.3);
+                });
+
+                zone.on('pointerout', () => {
+                    zone.setAlpha(0);
+                });
+
                 zone.on('pointerdown', () => {
                     this.handleGridClick(row, col);
                 });
@@ -216,8 +294,14 @@ class GameScene extends Phaser.Scene {
         const clickedCell = this.grid.find(cell => cell.row === row && cell.col === col);
         if (!clickedCell) return;
 
+        // 数字が表示されていないセルをクリックした場合もエラー
+        if (clickedCell.number === null) {
+            this.scene.start('RetryScene', { displayTime: this.displayTime, level: this.level });
+            return;
+        }
+
         // 既にクリック済みのセルを無視
-        if (clickedCell.number === null) return;
+        if (clickedCell.number === 0) return;
 
         // 正しい数字をクリックしているか確認
         if (clickedCell.number === this.expectedNumber) {
@@ -225,6 +309,15 @@ class GameScene extends Phaser.Scene {
             clickedCell.object.setVisible(true); // 数字を再表示
             clickedCell.object.setStyle({ backgroundColor: '#4CAF50' }); // 背景色を変更
             clickedCell.zone.disableInteractive(); // クリックを無効化
+            clickedCell.number = 0; // 数字をリセットして再クリックを防止
+
+            // 視覚的な強調: 正しいクリック時にアニメーション
+            this.tweens.add({
+                targets: clickedCell.object,
+                scale: { from: 1, to: 1.2 },
+                yoyo: true,
+                duration: 200
+            });
 
             this.expectedNumber += 1;
 
@@ -237,6 +330,14 @@ class GameScene extends Phaser.Scene {
             }
         } else {
             // 間違ったクリック
+            // 視覚的な強調: 間違ったクリック時にエラーアニメーション
+            this.tweens.add({
+                targets: clickedCell.object,
+                scale: { from: 1, to: 0.8 },
+                yoyo: true,
+                duration: 200
+            });
+
             this.scene.start('RetryScene', { displayTime: this.displayTime, level: this.level });
         }
     }
@@ -269,14 +370,14 @@ class ClearScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // クリアテキスト
-        this.add.text(width / 2, height / 3, 'クリア！', {
+        this.add.text(width / 2, height / 3 + 50, 'クリア！', {
             fontSize: '64px',
             fill: '#FFD700'
         }).setOrigin(0.5);
 
         // ランダムメッセージ
         const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
-        this.add.text(width / 2, height / 2, randomMessage, {
+        this.add.text(width / 2, height / 2 + 50, randomMessage, {
             fontSize: '48px',
             fill: '#000'
         }).setOrigin(0.5);
@@ -301,7 +402,7 @@ class ClearScene extends Phaser.Scene {
         }
 
         // 「つぎのれべる」ボタン
-        const nextLevelButton = this.add.text(width / 2, height / 2 + 150, 'つぎのれべる', { // ボタンのY座標を調整
+        const nextLevelButton = this.add.text(width / 2, height / 2 + 150, 'つぎのれべる', { // ボタンのY座標をさらに下げる
             fontSize: '48px',
             fill: '#fff',
             backgroundColor: '#4CAF50',
@@ -309,7 +410,24 @@ class ClearScene extends Phaser.Scene {
             borderRadius: 10
         }).setOrigin(0.5).setInteractive();
 
+        // 視覚的な強調: ホバー時のハイライト
+        nextLevelButton.on('pointerover', () => {
+            nextLevelButton.setStyle({ backgroundColor: '#388E3C' });
+        });
+
+        nextLevelButton.on('pointerout', () => {
+            nextLevelButton.setStyle({ backgroundColor: '#4CAF50' });
+        });
+
+        // 視覚的な強調: ボタンクリック時のアニメーション
         nextLevelButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: nextLevelButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
             this.scene.start('CountdownScene', { displayTime: this.displayTime, level: this.level + 1 });
         });
     }
@@ -330,7 +448,7 @@ class RetryScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // ゲームオーバーのテキスト
-        this.add.text(width / 2, height / 3, 'がーむおーばー', {
+        this.add.text(width / 2, height / 3 + 50, 'がーむおーばー', {
             fontSize: '64px',
             fill: '#FF0000'
         }).setOrigin(0.5);
@@ -344,7 +462,24 @@ class RetryScene extends Phaser.Scene {
             borderRadius: 10
         }).setOrigin(0.5).setInteractive();
 
+        // 視覚的な強調: ホバー時のハイライト
+        retryButton.on('pointerover', () => {
+            retryButton.setStyle({ backgroundColor: '#D84315' });
+        });
+
+        retryButton.on('pointerout', () => {
+            retryButton.setStyle({ backgroundColor: '#FF5722' });
+        });
+
+        // 視覚的な強調: ボタンクリック時のアニメーション
         retryButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: retryButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
             this.scene.start('GameScene', { displayTime: this.displayTime, level: this.level });
         });
 
@@ -357,7 +492,24 @@ class RetryScene extends Phaser.Scene {
             borderRadius: 10
         }).setOrigin(0.5).setInteractive();
 
+        // 視覚的な強調: ホバー時のハイライト
+        restartButton.on('pointerover', () => {
+            restartButton.setStyle({ backgroundColor: '#1976D2' });
+        });
+
+        restartButton.on('pointerout', () => {
+            restartButton.setStyle({ backgroundColor: '#2196F3' });
+        });
+
+        // 視覚的な強調: ボタンクリック時のアニメーション
         restartButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: restartButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
             this.scene.start('SelectionScene');
         });
     }
