@@ -117,72 +117,154 @@ class GameScene extends Phaser.Scene {
         this.level = data.level;
         this.expectedNumber = 1;
         this.numbers = [];
+        this.gridSize = 5; // 縦横のマス数
+        this.grid = []; // グリッドセルの情報
     }
 
     create() {
         const { width, height } = this.scale;
+
+        // レベル表示
         this.add.text(50, 50, `レベル: ${this.level}`, {
             fontSize: '32px',
             fill: '#000'
         });
 
-        // 生成する数字のリスト
+        // グリッドの描画
+        this.drawGrid();
+
+        // 数字の配置
+        this.placeNumbers();
+
+        // 数字を一定時間後に消す
+        this.time.delayedCall(this.displayTime, () => {
+            this.hideNumbers();
+        }, [], this);
+    }
+
+    drawGrid() {
+        const { width, height } = this.scale;
+        const gridWidth = width * 0.8;
+        const gridHeight = height * 0.8;
+        const startX = (width - gridWidth) / 2;
+        const startY = (height - gridHeight) / 2;
+        const cellWidth = gridWidth / this.gridSize;
+        const cellHeight = gridHeight / this.gridSize;
+
+        // グリッドの線を描画
+        const graphics = this.add.graphics();
+        graphics.lineStyle(2, 0x000000, 1);
+
+        // 縦線
+        for (let i = 0; i <= this.gridSize; i++) {
+            graphics.moveTo(startX + i * cellWidth, startY);
+            graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
+        }
+
+        // 横線
+        for (let i = 0; i <= this.gridSize; i++) {
+            graphics.moveTo(startX, startY + i * cellHeight);
+            graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
+        }
+
+        graphics.strokePath();
+
+        // グリッドセルのクリックエリアを設定
+        for (let row = 0; row < this.gridSize; row++) {
+            for (let col = 0; col < this.gridSize; col++) {
+                const x = startX + col * cellWidth;
+                const y = startY + row * cellHeight;
+
+                // グリッドセルの透明なボタンを作成
+                const zone = this.add.zone(x + cellWidth / 2, y + cellHeight / 2, cellWidth, cellHeight)
+                    .setRectangleDropZone(cellWidth, cellHeight)
+                    .setInteractive();
+
+                zone.on('pointerdown', () => {
+                    this.handleGridClick(row, col);
+                });
+
+                // グリッドセルの情報を保存
+                this.grid.push({
+                    row: row,
+                    col: col,
+                    x: x,
+                    y: y,
+                    width: cellWidth,
+                    height: cellHeight,
+                    number: null, // 後で数字を割り当て
+                    object: null // 数字のテキストオブジェクト
+                });
+            }
+        }
+    }
+
+    placeNumbers() {
+        const totalNumbers = this.level + 2; // 最初は3つ
+        if (totalNumbers > this.gridSize * this.gridSize) {
+            alert('レベルが高すぎます。ゲームを終了します。');
+            this.scene.start('StartScene');
+            return;
+        }
+
+        // 1からtotalNumbersまでの数字を生成
         this.numbers = [];
-        for (let i = 1; i <= this.level + 2; i++) { // 最初は3つ
+        for (let i = 1; i <= totalNumbers; i++) {
             this.numbers.push(i);
         }
 
-        // 数字をシャッフル
-        Phaser.Utils.Array.Shuffle(this.numbers);
-
-        // グリッドの設定
-        const gridCols = Math.ceil(Math.sqrt(this.numbers.length));
-        const gridRows = Math.ceil(this.numbers.length / gridCols);
-        const gridWidth = width * 0.8;
-        const gridHeight = height * 0.6;
-        const cellWidth = gridWidth / gridCols;
-        const cellHeight = gridHeight / gridRows;
-
-        this.numberObjects = [];
+        // 数字の配置場所をランダムに選択
+        const availableIndices = Phaser.Utils.Array.NumberArray(0, this.grid.length - 1);
+        Phaser.Utils.Array.Shuffle(availableIndices);
 
         this.numbers.forEach((num, index) => {
-            const col = index % gridCols;
-            const row = Math.floor(index / gridCols);
-            const x = (width - gridWidth) / 2 + col * cellWidth + cellWidth / 2;
-            const y = height / 2 - gridHeight / 2 + row * cellHeight + cellHeight / 2;
+            const gridIndex = availableIndices[index];
+            const cell = this.grid[gridIndex];
+            cell.number = num;
 
-            const numberText = this.add.text(x, y, num, {
+            // 数字のテキストオブジェクトを作成
+            const numberText = this.add.text(cell.x + cell.width / 2, cell.y + cell.height / 2, num, {
                 fontSize: '48px',
                 fill: '#fff',
                 backgroundColor: '#FF5722',
                 padding: { x: 20, y: 20 },
                 borderRadius: 10
-            }).setOrigin(0.5).setInteractive();
-
-            numberText.on('pointerdown', () => {
-                this.handleNumberClick(num, numberText);
-            });
-
-            this.numberObjects.push(numberText);
+            }).setOrigin(0.5);
+            cell.object = numberText;
         });
-
-        // 数字を一定時間後に消す
-        this.time.delayedCall(this.displayTime, () => {
-            this.numberObjects.forEach(obj => obj.setVisible(false));
-        }, [], this);
     }
 
-    handleNumberClick(num, obj) {
-        if (num === this.expectedNumber) {
-            // 正しいタッチ
-            obj.setStyle({ backgroundColor: '#4CAF50' });
+    hideNumbers() {
+        this.grid.forEach(cell => {
+            if (cell.object) {
+                cell.object.setVisible(false);
+            }
+        });
+    }
+
+    handleGridClick(row, col) {
+        // クリックされたセルを特定
+        const clickedCell = this.grid.find(cell => cell.row === row && cell.col === col);
+        if (!clickedCell) return;
+
+        // 正しい数字をクリックしているか確認
+        if (clickedCell.number === this.expectedNumber) {
+            // 正しいクリック
             this.expectedNumber += 1;
+            // セルの背景色を変更してフィードバック
+            if (clickedCell.object) {
+                clickedCell.object.setStyle({ backgroundColor: '#4CAF50' });
+            } else {
+                // 数字がなかった場合（エラー）
+                // 何もしない
+            }
+
+            // 全ての数字をクリックした場合、レベルアップ
             if (this.expectedNumber > this.level + 2) {
-                // レベルクリア
                 this.scene.start('ClearScene', { displayTime: this.displayTime, level: this.level });
             }
         } else {
-            // 間違ったタッチ
+            // 間違ったクリック
             this.scene.start('RetryScene', { displayTime: this.displayTime, level: this.level });
         }
     }
@@ -229,7 +311,7 @@ class ClearScene extends Phaser.Scene {
 
         // エフェクト（簡易的な花火）
         for (let i = 0; i < 20; i++) {
-            this.time.delayedCall(100, () => {
+            this.time.delayedCall(100 * i, () => {
                 const particle = this.add.circle(
                     Phaser.Math.Between(0, width),
                     Phaser.Math.Between(0, height),
@@ -243,7 +325,7 @@ class ClearScene extends Phaser.Scene {
                     duration: 1000,
                     onComplete: () => particle.destroy()
                 });
-            }, [i * 100], this);
+            }, [], this);
         }
 
         // 次のレベルへ自動遷移
