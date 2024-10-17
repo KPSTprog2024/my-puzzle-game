@@ -1,38 +1,4 @@
-// シーン1: スタート画面
-class StartScene extends Phaser.Scene {
-    constructor() {
-        super({ key: 'StartScene' });
-    }
-
-    preload() {
-        // 必要なアセットをここで読み込む
-    }
-
-    create() {
-        const { width, height } = this.scale;
-
-        // タイトル
-        this.add.text(width / 2, height / 3, 'NumberMemory', {
-            fontSize: '64px',
-            fill: '#000'
-        }).setOrigin(0.5);
-
-        // スタートボタン
-        const startButton = this.add.text(width / 2, height / 2, 'はじめる', {
-            fontSize: '48px',
-            fill: '#fff',
-            backgroundColor: '#4CAF50',
-            padding: { x: 20, y: 10 },
-            borderRadius: 10
-        }).setOrigin(0.5).setInteractive();
-
-        startButton.on('pointerdown', () => {
-            this.scene.start('SelectionScene');
-        });
-    }
-}
-
-// シーン2: 表示時間選択画面
+// シーン1: 表示時間選択画面
 class SelectionScene extends Phaser.Scene {
     constructor() {
         super({ key: 'SelectionScene' });
@@ -41,7 +7,8 @@ class SelectionScene extends Phaser.Scene {
     create() {
         const { width, height } = this.scale;
 
-        this.add.text(width / 2, height / 4, '表示時間を選んでね', {
+        // タイトル
+        this.add.text(width / 2, height / 4, 'ひょうじじかんをえらんでね', {
             fontSize: '48px',
             fill: '#000'
         }).setOrigin(0.5);
@@ -68,7 +35,7 @@ class SelectionScene extends Phaser.Scene {
     }
 }
 
-// シーン3: カウントダウン
+// シーン2: カウントダウン
 class CountdownScene extends Phaser.Scene {
     constructor() {
         super({ key: 'CountdownScene' });
@@ -106,7 +73,7 @@ class CountdownScene extends Phaser.Scene {
     }
 }
 
-// シーン4: ゲームプレイ画面
+// シーン3: ゲームプレイ画面
 class GameScene extends Phaser.Scene {
     constructor() {
         super({ key: 'GameScene' });
@@ -125,7 +92,7 @@ class GameScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // レベル表示
-        this.add.text(50, 50, `レベル: ${this.level}`, {
+        this.add.text(50, 50, `れべる: ${this.level}`, {
             fontSize: '32px',
             fill: '#000'
         });
@@ -193,7 +160,8 @@ class GameScene extends Phaser.Scene {
                     width: cellWidth,
                     height: cellHeight,
                     number: null, // 後で数字を割り当て
-                    object: null // 数字のテキストオブジェクト
+                    object: null, // 数字のテキストオブジェクト
+                    zone: zone // クリックエリアのゾーン
                 });
             }
         }
@@ -202,8 +170,8 @@ class GameScene extends Phaser.Scene {
     placeNumbers() {
         const totalNumbers = this.level + 2; // 最初は3つ
         if (totalNumbers > this.gridSize * this.gridSize) {
-            alert('レベルが高すぎます。ゲームを終了します。');
-            this.scene.start('StartScene');
+            alert('すごくレベルがたかすぎるよ！ ゲームをおわるね。');
+            this.scene.start('SelectionScene');
             return;
         }
 
@@ -247,17 +215,17 @@ class GameScene extends Phaser.Scene {
         const clickedCell = this.grid.find(cell => cell.row === row && cell.col === col);
         if (!clickedCell) return;
 
+        // 既にクリック済みのセルを無視
+        if (clickedCell.number === null) return;
+
         // 正しい数字をクリックしているか確認
         if (clickedCell.number === this.expectedNumber) {
             // 正しいクリック
+            clickedCell.object.setVisible(true); // 数字を再表示
+            clickedCell.object.setStyle({ backgroundColor: '#4CAF50' }); // 背景色を変更
+            clickedCell.zone.disableInteractive(); // クリックを無効化
+
             this.expectedNumber += 1;
-            // セルの背景色を変更してフィードバック
-            if (clickedCell.object) {
-                clickedCell.object.setStyle({ backgroundColor: '#4CAF50' });
-            } else {
-                // 数字がなかった場合（エラー）
-                // 何もしない
-            }
 
             // 全ての数字をクリックした場合、レベルアップ
             if (this.expectedNumber > this.level + 2) {
@@ -270,7 +238,7 @@ class GameScene extends Phaser.Scene {
     }
 }
 
-// シーン5: クリア画面
+// シーン4: クリア画面
 class ClearScene extends Phaser.Scene {
     constructor() {
         super({ key: 'ClearScene' });
@@ -335,7 +303,7 @@ class ClearScene extends Phaser.Scene {
     }
 }
 
-// シーン6: リトライ画面（ゲームオーバー画面）
+// シーン5: リトライ画面（ゲームオーバー画面）
 class RetryScene extends Phaser.Scene {
     constructor() {
         super({ key: 'RetryScene' });
@@ -350,7 +318,7 @@ class RetryScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // ゲームオーバーのテキスト
-        this.add.text(width / 2, height / 3, 'ゲームオーバー', {
+        this.add.text(width / 2, height / 3, 'がーむおーばー', {
             fontSize: '64px',
             fill: '#FF0000'
         }).setOrigin(0.5);
@@ -390,7 +358,7 @@ const config = {
     width: window.innerWidth,
     height: window.innerHeight,
     backgroundColor: '#f0f8ff',
-    scene: [StartScene, SelectionScene, CountdownScene, GameScene, ClearScene, RetryScene],
+    scene: [SelectionScene, CountdownScene, GameScene, ClearScene, RetryScene],
     scale: {
         mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH
