@@ -9,6 +9,9 @@ body {
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 button {
@@ -20,10 +23,15 @@ button {
     background-color: #4CAF50;
     color: white;
     cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
 }
 
 button:hover {
     background-color: #45a049;
+}
+
+button:active {
+    transform: scale(0.95);
 }
 
 .centered {
