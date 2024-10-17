@@ -29,7 +29,7 @@ class SelectionScene extends Phaser.Scene {
             }).setOrigin(0.5).setInteractive();
 
             button.on('pointerdown', () => {
-                this.scene.start('CountdownScene', { displayTime: time.value });
+                this.scene.start('CountdownScene', { displayTime: time.value, level: 1 });
             });
         });
     }
@@ -43,6 +43,7 @@ class CountdownScene extends Phaser.Scene {
 
     init(data) {
         this.displayTime = data.displayTime;
+        this.level = data.level;
     }
 
     create() {
@@ -68,7 +69,7 @@ class CountdownScene extends Phaser.Scene {
             this.countText.setText(this.count);
         } else {
             this.timeEvent.remove(false);
-            this.scene.start('GameScene', { displayTime: this.displayTime, level: 1 });
+            this.scene.start('GameScene', { displayTime: this.displayTime, level: this.level });
         }
     }
 }
@@ -170,7 +171,7 @@ class GameScene extends Phaser.Scene {
     placeNumbers() {
         const totalNumbers = this.level + 2; // 最初は3つ
         if (totalNumbers > this.gridSize * this.gridSize) {
-            alert('すごくレベルがたかすぎるよ！ ゲームをおわるね。');
+            alert('すごくれべるがたかすぎるよ！ ゲームをおわるね。');
             this.scene.start('SelectionScene');
             return;
         }
@@ -227,9 +228,12 @@ class GameScene extends Phaser.Scene {
 
             this.expectedNumber += 1;
 
-            // 全ての数字をクリックした場合、レベルアップ
+            // 最後の数字をクリックした場合
             if (this.expectedNumber > this.level + 2) {
-                this.scene.start('ClearScene', { displayTime: this.displayTime, level: this.level });
+                // 0.5秒待ってからクリア画面に遷移
+                this.time.delayedCall(500, () => {
+                    this.scene.start('ClearScene', { displayTime: this.displayTime, level: this.level });
+                }, [], this);
             }
         } else {
             // 間違ったクリック
@@ -296,10 +300,18 @@ class ClearScene extends Phaser.Scene {
             }, [], this);
         }
 
-        // 次のレベルへ自動遷移
-        this.time.delayedCall(3000, () => {
-            this.scene.start('GameScene', { displayTime: this.displayTime, level: this.level + 1 });
-        }, [], this);
+        // 「つぎのれべる」ボタン
+        const nextLevelButton = this.add.text(width / 2, height / 2 + 100, 'つぎのれべる', {
+            fontSize: '48px',
+            fill: '#fff',
+            backgroundColor: '#4CAF50',
+            padding: { x: 20, y: 10 },
+            borderRadius: 10
+        }).setOrigin(0.5).setInteractive();
+
+        nextLevelButton.on('pointerdown', () => {
+            this.scene.start('CountdownScene', { displayTime: this.displayTime, level: this.level + 1 });
+        });
     }
 }
 
@@ -346,7 +358,7 @@ class RetryScene extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive();
 
         restartButton.on('pointerdown', () => {
-            this.scene.start('GameScene', { displayTime: this.displayTime, level: 1 });
+            this.scene.start('SelectionScene');
         });
     }
 }
