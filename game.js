@@ -1,20 +1,3 @@
-// Phaserの設定
-const config = {
-    type: Phaser.AUTO,
-    parent: 'game-container',
-    width: window.innerWidth,
-    height: window.innerHeight,
-    backgroundColor: '#f0f8ff',
-    scene: [StartScene, SelectionScene, CountdownScene, GameScene, ClearScene, RetryScene],
-    scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
-    }
-};
-
-// ゲームインスタンスの作成
-const game = new Phaser.Game(config);
-
 // シーン1: スタート画面
 class StartScene extends Phaser.Scene {
     constructor() {
@@ -317,3 +300,20 @@ class RetryScene extends Phaser.Scene {
         });
     }
 }
+
+// Phaserの設定
+const config = {
+    type: Phaser.AUTO,
+    parent: 'game-container',
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: '#f0f8ff',
+    scene: [StartScene, SelectionScene, CountdownScene, GameScene, ClearScene, RetryScene],
+    scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    }
+};
+
+// ゲームインスタンスの作成
+const game = new Phaser.Game(config);
