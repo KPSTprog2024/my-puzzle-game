@@ -612,19 +612,92 @@ class RetryScene extends Phaser.Scene {
     }
 }
 
-// Phaserの設定
-const config = {
-    type: Phaser.AUTO,
-    parent: 'game-container',
-    width: window.innerWidth,
-    height: window.innerHeight,
-    backgroundColor: '#f0f8ff',
-    scene: [SelectionScene, CountdownScene, GameScene, ClearScene, RetryScene],
-    scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
+// シーン4: クリア画面
+class ClearScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'ClearScene' });
     }
-};
 
-// ゲームインスタンスの作成
-const game = new Phaser.Game(config);
+    init(data) {
+        this.displayTime = data.displayTime;
+        this.level = data.level;
+        this.messages = [
+            'すごい！',
+            'よくできた！',
+            'ナイス！',
+            'かんせい！',
+            'がんばったね！',
+            'きらきら！',
+            'ピカピカ！',
+            'スマート！',
+            'トップだ！',
+            'ファンタスティック！'
+        ];
+    }
+
+    create() {
+        const { width, height } = this.scale;
+
+        // クリアテキスト
+        this.add.text(width / 2, height / 3 + 150, 'クリア！', {
+            fontSize: '64px',
+            fill: '#FFD700'
+        }).setOrigin(0.5);
+
+        // ランダムメッセージ
+        const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
+        this.add.text(width / 2, height / 2 + 150, randomMessage, {
+            fontSize: '48px',
+            fill: '#000'
+        }).setOrigin(0.5);
+
+        // エフェクト（簡易的な花火）
+        for (let i = 0; i < 20; i++) {
+            this.time.delayedCall(100 * i, () => {
+                const particle = this.add.circle(
+                    Phaser.Math.Between(0, width),
+                    Phaser.Math.Between(0, height),
+                    Phaser.Math.Between(2, 6),
+                    Phaser.Display.Color.RandomRGB().color
+                );
+                this.tweens.add({
+                    targets: particle,
+                    alpha: 0,
+                    scale: { from: 1, to: 3 },
+                    duration: 1000,
+                    onComplete: () => particle.destroy()
+                });
+            }, [], this);
+        }
+
+        // 「つぎのれべる」ボタン
+        const nextLevelButton = this.add.text(width / 2, height / 2 + 250, 'つぎのれべる', { // ボタンのY座標をさらに下げる
+            fontSize: '48px',
+            fill: '#fff',
+            backgroundColor: '#4CAF50',
+            padding: { x: 20, y: 10 },
+            borderRadius: 10
+        }).setOrigin(0.5).setInteractive();
+
+        // 視覚的な強調: ホバー時のハイライト
+        nextLevelButton.on('pointerover', () => {
+            nextLevelButton.setStyle({ backgroundColor: '#388E3C' });
+        });
+
+        nextLevelButton.on('pointerout', () => {
+            nextLevelButton.setStyle({ backgroundColor: '#4CAF50' });
+        });
+
+        // 視覚的な強調: ボタンクリック時のアニメーション
+        nextLevelButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: nextLevelButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
+            this.scene.start('CountdownScene', { displayTime: this.displayTime, level: this.level + 1 });
+        });
+    }
+}
