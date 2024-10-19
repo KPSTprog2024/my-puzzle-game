@@ -258,487 +258,341 @@ class SelectionScene extends Phaser.Scene {
         });
     }
 
-    // シーン2: カウントダウン
-    class CountdownScene extends Phaser.Scene {
-        constructor() {
-            super({ key: 'CountdownScene' });
-        }
-
-        init(data) {
-            this.displayTime = data.displayTime;
-            this.level = data.level;
-            this.gridSize = data.gridSize;
-            this.gameMode = data.gameMode;
-        }
-
-        create() {
-            const { width, height } = this.scale;
-            this.count = 3;
-
-            // カウントダウン用グリッド
-            this.drawGrid();
-
-            // カウントダウン数字
-            this.countText = this.add.text(width / 2, height / 2, this.count, {
-                fontSize: `${height * 0.1}px`,
-                fill: '#FF0000',
-                align: 'center'
-            }).setOrigin(0.5);
-
-            // カウントダウン数字にアニメーションを追加
-            this.tweens.add({
-                targets: this.countText,
-                scale: { from: 1, to: 1.5 },
-                yoyo: true,
-                repeat: -1,
-                duration: 500
-            });
-
-            this.timeEvent = this.time.addEvent({
-                delay: 1000,
-                callback: this.updateCountdown,
-                callbackScope: this,
-                loop: true
-            });
-        }
-
-        updateCountdown() {
-            this.count -= 1;
-            if (this.count > 0) {
-                this.countText.setText(this.count);
-            } else {
-                this.timeEvent.remove(false);
-                // カウントダウン終了時にアニメーションを停止
-                this.tweens.killTweensOf(this.countText);
-                this.countText.destroy();
-                this.scene.start('GameScene', { 
-                    displayTime: this.displayTime, 
-                    level: this.level, 
-                    gridSize: this.gridSize, 
-                    gameMode: this.gameMode 
-                });
+    // ヘルパー関数: 選択済みボタンのスタイルを更新
+    SelectionScene.prototype.updateButtonStyles = function(selectedButton, totalButtons, startX, buttonWidth, buttonSpacing, startY) {
+        for (let i = 0; i < totalButtons; i++) {
+            const button = this.children.getByName(`button_${startY}_${i}`);
+            if (button && button !== selectedButton) {
+                button.setStyle({ backgroundColor: '#2196F3' });
             }
         }
+    };
 
-        drawGrid() {
-            const { width, height } = this.scale;
-            const gridWidth = width * 0.8;
-            const gridHeight = height * 0.8;
-            const startX = (width - gridWidth) / 2;
-            const startY = (height - gridHeight) / 2;
-            const gridSize = this.gridSize;
-            const cellWidth = gridWidth / gridSize;
-            const cellHeight = gridHeight / gridSize;
+// シーン2: カウントダウン
+class CountdownScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'CountdownScene' });
+    }
 
-            // グリッドの線を描画
-            const graphics = this.add.graphics();
-            graphics.lineStyle(2, 0x000000, 1);
+    init(data) {
+        this.displayTime = data.displayTime;
+        this.level = data.level;
+        this.gridSize = data.gridSize;
+        this.gameMode = data.gameMode;
+    }
 
-            // 縦線
-            for (let i = 0; i <= gridSize; i++) {
-                graphics.moveTo(startX + i * cellWidth, startY);
-                graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
-            }
+    create() {
+        const { width, height } = this.scale;
+        this.count = 3;
 
-            // 横線
-            for (let i = 0; i <= gridSize; i++) {
-                graphics.moveTo(startX, startY + i * cellHeight);
-                graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
-            }
+        // カウントダウン用グリッド
+        this.drawGrid();
 
-            graphics.strokePath();
+        // カウントダウン数字
+        this.countText = this.add.text(width / 2, height / 2, this.count, {
+            fontSize: `${height * 0.1}px`,
+            fill: '#FF0000',
+            align: 'center'
+        }).setOrigin(0.5);
 
-            // ゲームモードに応じて要素を表示
-            if (this.gameMode === 'number') {
-                this.placeNumbers();
-            } else if (this.gameMode === 'color') {
-                this.placeColors();
-            }
+        // カウントダウン数字にアニメーションを追加
+        this.tweens.add({
+            targets: this.countText,
+            scale: { from: 1, to: 1.5 },
+            yoyo: true,
+            repeat: -1,
+            duration: 500
+        });
 
-            // 一定時間後に要素を隠す
-            this.time.delayedCall(this.displayTime, () => {
-                this.hideElements();
-            }, [], this);
-        }
+        this.timeEvent = this.time.addEvent({
+            delay: 1000,
+            callback: this.updateCountdown,
+            callbackScope: this,
+            loop: true
+        });
+    }
 
-        placeNumbers() {
-            const totalNumbers = this.level + 2;
-            if (totalNumbers > this.gridSize * this.gridSize) {
-                alert('レベルが高すぎます！ ゲームを終了します。');
-                this.scene.start('SelectionScene');
-                return;
-            }
-
-            // 1からtotalNumbersまでの数字を生成
-            this.numbers = [];
-            for (let i = 1; i <= totalNumbers; i++) {
-                this.numbers.push(i);
-            }
-
-            // 数字の配置場所をランダムに選択
-            const availableIndices = Phaser.Utils.Array.NumberArray(0, this.grid.length - 1);
-            Phaser.Utils.Array.Shuffle(availableIndices);
-
-            this.numbers.forEach((num, index) => {
-                const gridIndex = availableIndices[index];
-                const cell = this.grid[gridIndex];
-                cell.number = num;
-
-                // 数字のテキストオブジェクトを作成
-                const numberText = this.add.text(cell.x, cell.y, num, {
-                    fontSize: `${cell.height * 0.3}px`,
-                    fill: '#fff',
-                    backgroundColor: '#FF5722',
-                    padding: { x: 10, y: 10 },
-                    borderRadius: 5,
-                    align: 'center',
-                    wordWrap: { width: cell.width * 0.8 }
-                }).setOrigin(0.5);
-                cell.object = numberText;
-            });
-        }
-
-        placeColors() {
-            const totalColors = this.level + 2;
-            if (totalColors > this.gridSize * this.gridSize) {
-                alert('レベルが高すぎます！ ゲームを終了します。');
-                this.scene.start('SelectionScene');
-                return;
-            }
-
-            // 色のリスト
-            const colors = [
-                0xff5733, // 赤
-                0x33ff57, // 緑
-                0x3357ff, // 青
-                0xff33a8, // ピンク
-                0xfff933, // 黄色
-                0x33fff5, // 水色
-                0x8e44ad, // 紫
-                0xe67e22, // オレンジ
-                0x2ecc71, // ライム
-                0x3498db  // 明るい青
-            ];
-
-            // 色の選択
-            const selectedColors = Phaser.Utils.Array.Shuffle(colors).slice(0, totalColors);
-
-            // 色の配置場所をランダムに選択
-            const availableIndices = Phaser.Utils.Array.NumberArray(0, this.grid.length - 1);
-            Phaser.Utils.Array.Shuffle(availableIndices);
-
-            selectedColors.forEach((color, index) => {
-                const gridIndex = availableIndices[index];
-                const cell = this.grid[gridIndex];
-                cell.color = color;
-
-                // 色ブロックのオブジェクトを作成
-                const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, color)
-                    .setOrigin(0.5)
-                    .setInteractive();
-                cell.object = colorBlock;
-            });
-        }
-
-        hideElements() {
-            this.grid.forEach(cell => {
-                if (cell.object) {
-                    cell.object.setVisible(false);
-                }
+    updateCountdown() {
+        this.count -= 1;
+        if (this.count > 0) {
+            this.countText.setText(this.count);
+        } else {
+            this.timeEvent.remove(false);
+            // カウントダウン終了時にアニメーションを停止
+            this.tweens.killTweensOf(this.countText);
+            this.countText.destroy();
+            this.scene.start('GameScene', { 
+                displayTime: this.displayTime, 
+                level: this.level, 
+                gridSize: this.gridSize, 
+                gameMode: this.gameMode 
             });
         }
     }
 
-    // シーン3: ゲームプレイ画面
-    class GameScene extends Phaser.Scene {
-        constructor() {
-            super({ key: 'GameScene' });
+    drawGrid() {
+        const { width, height } = this.scale;
+        const gridWidth = width * 0.8;
+        const gridHeight = height * 0.8;
+        const startX = (width - gridWidth) / 2;
+        const startY = (height - gridHeight) / 2;
+        const gridSize = this.gridSize;
+        const cellWidth = gridWidth / gridSize;
+        const cellHeight = gridHeight / gridSize;
+
+        // グリッドの線を描画
+        const graphics = this.add.graphics();
+        graphics.lineStyle(2, 0x000000, 1);
+
+        // 縦線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX + i * cellWidth, startY);
+            graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
         }
 
-        init(data) {
-            this.displayTime = data.displayTime;
-            this.level = data.level;
-            this.gridSize = data.gridSize;
-            this.gameMode = data.gameMode;
-            this.expectedNumber = 1;
-            this.numbers = [];
-            this.grid = [];
-            this.wrongCells = [];
-            this.totalTargets = 0;
-            this.clickedTargets = 0;
+        // 横線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX, startY + i * cellHeight);
+            graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
         }
 
-        create() {
-            const { width, height } = this.scale;
+        graphics.strokePath();
+    }
+}
 
-            // レベル表示
-            this.add.text(width * 0.05, height * 0.05, `レベル: ${this.level}`, {
-                fontSize: `${height * 0.025}px`,
-                fill: '#000'
-            }).setOrigin(0, 0);
+// シーン3: ゲームプレイ画面
+class GameScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'GameScene' });
+    }
 
-            // グリッドの描画
-            this.drawGrid();
+    init(data) {
+        this.displayTime = data.displayTime;
+        this.level = data.level;
+        this.gridSize = data.gridSize;
+        this.gameMode = data.gameMode;
+        this.expectedNumber = 1;
+        this.numbers = [];
+        this.grid = [];
+        this.wrongCells = [];
+        this.totalTargets = 0;
+        this.clickedTargets = 0;
+    }
 
-            // 数字または色の配置はCountdownSceneで行われているため、ここでは何もしない
+    create() {
+        const { width, height } = this.scale;
 
-            // クリック数のトラッキング
-            if (this.gameMode === 'color') {
-                this.totalTargets = this.grid.filter(cell => cell.color !== null).length;
-                this.clickedTargets = 0;
-            }
+        // レベル表示
+        this.add.text(width * 0.05, height * 0.05, `レベル: ${this.level}`, {
+            fontSize: `${height * 0.025}px`,
+            fill: '#000'
+        }).setOrigin(0, 0);
+
+        // グリッドの描画
+        this.drawGrid();
+
+        // 数字または色の配置
+        if (this.gameMode === 'number') {
+            this.placeNumbers();
+        } else if (this.gameMode === 'color') {
+            this.placeColors();
         }
 
-        drawGrid() {
-            const { width, height } = this.scale;
-            const gridWidth = width * 0.8;
-            const gridHeight = height * 0.8;
-            const startX = (width - gridWidth) / 2;
-            const startY = (height - gridHeight) / 2;
-            const gridSize = this.gridSize;
-            const cellWidth = gridWidth / gridSize;
-            const cellHeight = gridHeight / gridSize;
+        // 一定時間後に表示を隠す
+        this.time.delayedCall(this.displayTime, () => {
+            this.hideElements();
+        }, [], this);
+    }
 
-            // グリッドの線を描画
-            const graphics = this.add.graphics();
-            graphics.lineStyle(2, 0x000000, 1);
+    drawGrid() {
+        const { width, height } = this.scale;
+        const gridWidth = width * 0.8;
+        const gridHeight = height * 0.8;
+        const startX = (width - gridWidth) / 2;
+        const startY = (height - gridHeight) / 2;
+        const gridSize = this.gridSize;
+        const cellWidth = gridWidth / gridSize;
+        const cellHeight = gridHeight / gridSize;
 
-            // 縦線
-            for (let i = 0; i <= gridSize; i++) {
-                graphics.moveTo(startX + i * cellWidth, startY);
-                graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
-            }
+        // グリッドの線を描画
+        const graphics = this.add.graphics();
+        graphics.lineStyle(2, 0x000000, 1);
 
-            // 横線
-            for (let i = 0; i <= gridSize; i++) {
-                graphics.moveTo(startX, startY + i * cellHeight);
-                graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
-            }
-
-            graphics.strokePath();
-
-            // ゲームモードに応じて要素を表示
-            if (this.gameMode === 'number') {
-                this.placeNumbers();
-            } else if (this.gameMode === 'color') {
-                this.placeColors();
-            }
-
-            // グリッドセルのクリックエリアを設定
-            for (let row = 0; row < gridSize; row++) {
-                for (let col = 0; col < gridSize; col++) {
-                    const x = startX + col * cellWidth;
-                    const y = startY + row * cellHeight;
-
-                    // グリッドセルの透明なボタンを作成
-                    const zone = this.add.zone(x + cellWidth / 2, y + cellHeight / 2, cellWidth, cellHeight)
-                        .setRectangleDropZone(cellWidth, cellHeight)
-                        .setInteractive();
-
-                    // ホバー時のハイライト
-                    zone.on('pointerover', () => {
-                        zone.setAlpha(0.3);
-                    });
-
-                    zone.on('pointerout', () => {
-                        zone.setAlpha(0);
-                    });
-
-                    zone.on('pointerdown', () => {
-                        this.handleGridClick(row, col);
-                    });
-
-                    // グリッドセルの情報を保存
-                    this.grid.push({
-                        row: row,
-                        col: col,
-                        x: x,
-                        y: y,
-                        width: cellWidth,
-                        height: cellHeight,
-                        number: null, // 後で数字を割り当て
-                        color: null,  // 後で色を割り当て
-                        object: null, // テキストまたは色ブロックのオブジェクト
-                        zone: zone,
-                        clicked: false
-                    });
-                }
-            }
+        // 縦線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX + i * cellWidth, startY);
+            graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
         }
 
-        placeNumbers() {
-            const totalNumbers = this.level + 2;
-            if (totalNumbers > this.gridSize * this.gridSize) {
-                alert('レベルが高すぎます！ ゲームを終了します。');
-                this.scene.start('SelectionScene');
-                return;
-            }
-
-            // 1からtotalNumbersまでの数字を生成
-            this.numbers = [];
-            for (let i = 1; i <= totalNumbers; i++) {
-                this.numbers.push(i);
-            }
-
-            // 数字の配置場所をランダムに選択
-            const availableIndices = Phaser.Utils.Array.NumberArray(0, this.grid.length - 1);
-            Phaser.Utils.Array.Shuffle(availableIndices);
-
-            this.numbers.forEach((num, index) => {
-                const gridIndex = availableIndices[index];
-                const cell = this.grid[gridIndex];
-                cell.number = num;
-
-                // 数字のテキストオブジェクトを作成
-                const numberText = this.add.text(cell.x, cell.y, num, {
-                    fontSize: `${cell.height * 0.3}px`,
-                    fill: '#fff',
-                    backgroundColor: '#FF5722',
-                    padding: { x: 10, y: 10 },
-                    borderRadius: 5,
-                    align: 'center',
-                    wordWrap: { width: cell.width * 0.8 }
-                }).setOrigin(0.5);
-                cell.object = numberText;
-            });
+        // 横線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX, startY + i * cellHeight);
+            graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
         }
 
-        placeColors() {
-            const totalColors = this.level + 2;
-            if (totalColors > this.gridSize * this.gridSize) {
-                alert('レベルが高すぎます！ ゲームを終了します。');
-                this.scene.start('SelectionScene');
-                return;
-            }
+        graphics.strokePath();
 
-            // 色のリスト
-            const colors = [
-                0xff5733, // 赤
-                0x33ff57, // 緑
-                0x3357ff, // 青
-                0xff33a8, // ピンク
-                0xfff933, // 黄色
-                0x33fff5, // 水色
-                0x8e44ad, // 紫
-                0xe67e22, // オレンジ
-                0x2ecc71, // ライム
-                0x3498db  // 明るい青
-            ];
+        // ゲームモードに応じて要素を表示
+        if (this.gameMode === 'number') {
+            this.placeNumbers();
+        } else if (this.gameMode === 'color') {
+            this.placeColors();
+        }
 
-            // 色の選択
-            const selectedColors = Phaser.Utils.Array.Shuffle(colors).slice(0, totalColors);
+        // グリッドセルのクリックエリアを設定
+        for (let row = 0; row < gridSize; row++) {
+            for (let col = 0; col < gridSize; col++) {
+                const x = startX + col * cellWidth;
+                const y = startY + row * cellHeight;
 
-            // 色の配置場所をランダムに選択
-            const availableIndices = Phaser.Utils.Array.NumberArray(0, this.grid.length - 1);
-            Phaser.Utils.Array.Shuffle(availableIndices);
-
-            selectedColors.forEach((color, index) => {
-                const gridIndex = availableIndices[index];
-                const cell = this.grid[gridIndex];
-                cell.color = color;
-
-                // 色ブロックのオブジェクトを作成
-                const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, color)
-                    .setOrigin(0.5)
+                // グリッドセルの透明なボタンを作成
+                const zone = this.add.zone(x + cellWidth / 2, y + cellHeight / 2, cellWidth, cellHeight)
+                    .setRectangleDropZone(cellWidth, cellHeight)
                     .setInteractive();
-                cell.object = colorBlock;
-            });
+
+                // ホバー時のハイライト
+                zone.on('pointerover', () => {
+                    zone.setAlpha(0.3);
+                });
+
+                zone.on('pointerout', () => {
+                    zone.setAlpha(0);
+                });
+
+                zone.on('pointerdown', () => {
+                    this.handleGridClick(row, col);
+                });
+
+                // グリッドセルの情報を保存
+                this.grid.push({
+                    row: row,
+                    col: col,
+                    x: x,
+                    y: y,
+                    width: cellWidth,
+                    height: cellHeight,
+                    number: null, // 後で数字を割り当て
+                    color: null,  // 後で色を割り当て
+                    object: null, // テキストまたは色ブロックのオブジェクト
+                    zone: zone,
+                    clicked: false
+                });
+            }
+        }
+    }
+
+    placeNumbers() {
+        const totalNumbers = this.level + 2;
+        if (totalNumbers > this.gridSize * this.gridSize) {
+            alert('レベルが高すぎます！ ゲームを終了します。');
+            this.scene.start('SelectionScene');
+            return;
         }
 
-        hideElements() {
-            this.grid.forEach(cell => {
-                if (cell.object) {
-                    cell.object.setVisible(false);
-                }
-            });
+        // 1からtotalNumbersまでの数字を生成
+        this.numbers = [];
+        for (let i = 1; i <= totalNumbers; i++) {
+            this.numbers.push(i);
         }
 
-        handleGridClick(row, col) {
-            const clickedCell = this.grid.find(cell => cell.row === row && cell.col === col);
-            if (!clickedCell) return;
+        // 数字の配置場所をランダムに選択
+        const availableIndices = Phaser.Utils.Array.NumberArray(0, this.grid.length - 1);
+        Phaser.Utils.Array.Shuffle(availableIndices);
 
-            if (this.gameMode === 'number') {
-                // 数字モード
-                if (clickedCell.number === null) {
-                    this.wrongCells.push({ row, col });
-                    this.scene.start('RetryScene', { 
-                        displayTime: this.displayTime, 
-                        level: this.level, 
-                        gridSize: this.gridSize, 
-                        gameMode: this.gameMode, 
-                        grid: this.grid, 
-                        wrongCells: this.wrongCells 
-                    });
-                    return;
-                }
+        this.numbers.forEach((num, index) => {
+            const gridIndex = availableIndices[index];
+            const cell = this.grid[gridIndex];
+            cell.number = num;
 
-                if (clickedCell.clicked) return;
+            // 数字のテキストオブジェクトを作成
+            const numberText = this.add.text(cell.x, cell.y, num, {
+                fontSize: `${cell.height * 0.3}px`,
+                fill: '#fff',
+                backgroundColor: '#FF5722',
+                padding: { x: 10, y: 10 },
+                borderRadius: 5,
+                align: 'center',
+                wordWrap: { width: cell.width * 0.8 }
+            }).setOrigin(0.5);
+            cell.object = numberText;
+        });
+    }
 
-                if (clickedCell.number === this.expectedNumber) {
-                    clickedCell.clicked = true;
-                    clickedCell.object.setVisible(true);
-                    clickedCell.object.setStyle({ backgroundColor: '#4CAF50' });
-                    clickedCell.zone.disableInteractive();
+    placeColors() {
+        const totalColors = this.level + 2;
+        if (totalColors > this.gridSize * this.gridSize) {
+            alert('レベルが高すぎます！ ゲームを終了します。');
+            this.scene.start('SelectionScene');
+            return;
+        }
 
-                    this.tweens.add({
-                        targets: clickedCell.object,
-                        scale: { from: 1, to: 1.2 },
-                        yoyo: true,
-                        duration: 200
-                    });
+        // 色のリスト
+        const colors = [
+            0xff5733, // 赤
+            0x33ff57, // 緑
+            0x3357ff, // 青
+            0xff33a8, // ピンク
+            0xfff933, // 黄色
+            0x33fff5, // 水色
+            0x8e44ad, // 紫
+            0xe67e22, // オレンジ
+            0x2ecc71, // ライム
+            0x3498db  // 明るい青
+        ];
 
-                    this.expectedNumber += 1;
+        // 色の選択
+        const selectedColors = Phaser.Utils.Array.Shuffle(colors).slice(0, totalColors);
 
-                    if (this.expectedNumber > this.numbers.length) {
-                        this.time.delayedCall(500, () => {
-                            this.scene.start('ClearScene', { 
-                                displayTime: this.displayTime, 
-                                level: this.level, 
-                                gridSize: this.gridSize, 
-                                gameMode: this.gameMode 
-                            });
-                        }, [], this);
-                    }
-                } else {
-                    this.wrongCells.push({ row, col });
-                    if (clickedCell.object) {
-                        this.tweens.add({
-                            targets: clickedCell.object,
-                            scale: { from: 1, to: 0.8 },
-                            yoyo: true,
-                            duration: 200
-                        });
-                    }
+        // 色の配置場所をランダムに選択
+        const availableIndices = Phaser.Utils.Array.NumberArray(0, this.grid.length - 1);
+        Phaser.Utils.Array.Shuffle(availableIndices);
 
-                    this.scene.start('RetryScene', { 
-                        displayTime: this.displayTime, 
-                        level: this.level, 
-                        gridSize: this.gridSize, 
-                        gameMode: this.gameMode, 
-                        grid: this.grid, 
-                        wrongCells: this.wrongCells 
-                    });
-                }
-            } else if (this.gameMode === 'color') {
-                // 色モード
-                if (clickedCell.color === null) {
-                    this.wrongCells.push({ row, col });
-                    this.scene.start('RetryScene', { 
-                        displayTime: this.displayTime, 
-                        level: this.level, 
-                        gridSize: this.gridSize, 
-                        gameMode: this.gameMode, 
-                        grid: this.grid, 
-                        wrongCells: this.wrongCells 
-                    });
-                    return;
-                }
+        selectedColors.forEach((color, index) => {
+            const gridIndex = availableIndices[index];
+            const cell = this.grid[gridIndex];
+            cell.color = color;
 
-                if (clickedCell.clicked) return;
+            // 色ブロックのオブジェクトを作成
+            const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, color)
+                .setOrigin(0.5)
+                .setInteractive();
+            cell.object = colorBlock;
+        });
+    }
 
-                // クリックされた色ブロックを記録
+    hideElements() {
+        this.grid.forEach(cell => {
+            if (cell.object) {
+                cell.object.setVisible(false);
+            }
+        });
+    }
+
+    handleGridClick(row, col) {
+        const clickedCell = this.grid.find(cell => cell.row === row && cell.col === col);
+        if (!clickedCell) return;
+
+        if (this.gameMode === 'number') {
+            // 数字モード
+            if (clickedCell.number === null) {
+                this.wrongCells.push({ row, col });
+                this.scene.start('RetryScene', { 
+                    displayTime: this.displayTime, 
+                    level: this.level, 
+                    gridSize: this.gridSize, 
+                    gameMode: this.gameMode, 
+                    grid: this.grid, 
+                    wrongCells: this.wrongCells 
+                });
+                return;
+            }
+
+            if (clickedCell.clicked) return;
+
+            if (clickedCell.number === this.expectedNumber) {
                 clickedCell.clicked = true;
-                clickedCell.object.setAlpha(1);
+                clickedCell.object.setVisible(true);
+                clickedCell.object.setStyle({ backgroundColor: '#4CAF50' });
                 clickedCell.zone.disableInteractive();
 
                 this.tweens.add({
@@ -748,9 +602,9 @@ class SelectionScene extends Phaser.Scene {
                     duration: 200
                 });
 
-                this.clickedTargets += 1;
+                this.expectedNumber += 1;
 
-                if (this.clickedTargets >= this.totalTargets) {
+                if (this.expectedNumber > this.numbers.length) {
                     this.time.delayedCall(500, () => {
                         this.scene.start('ClearScene', { 
                             displayTime: this.displayTime, 
@@ -760,593 +614,653 @@ class SelectionScene extends Phaser.Scene {
                         });
                     }, [], this);
                 }
-            }
-        }
-    }
-
-    // シーン4: クリア画面
-    class ClearScene extends Phaser.Scene {
-        constructor() {
-            super({ key: 'ClearScene' });
-        }
-
-        init(data) {
-            this.displayTime = data.displayTime;
-            this.level = data.level;
-            this.gridSize = data.gridSize;
-            this.gameMode = data.gameMode;
-            this.messages = [
-                'すごい！',
-                'よくできた！',
-                'ナイス！',
-                'かんせい！',
-                'がんばったね！',
-                'きらきら！',
-                'ピカピカ！',
-                'スマート！',
-                'トップだ！',
-                'ファンタスティック！'
-            ];
-        }
-
-        create() {
-            const { width, height } = this.scale;
-
-            // クリアテキスト
-            this.add.text(width / 2, height * 0.3, 'クリア！', {
-                fontSize: `${height * 0.05}px`,
-                fill: '#FFD700',
-                align: 'center',
-                wordWrap: { width: width * 0.8 }
-            }).setOrigin(0.5);
-
-            // ランダムメッセージ
-            const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
-            this.add.text(width / 2, height / 2, randomMessage, {
-                fontSize: `${height * 0.035}px`,
-                fill: '#000',
-                align: 'center',
-                wordWrap: { width: width * 0.8 }
-            }).setOrigin(0.5);
-
-            // エフェクト（簡易的な花火）
-            for (let i = 0; i < 20; i++) {
-                this.time.delayedCall(100 * i, () => {
-                    const particle = this.add.circle(
-                        Phaser.Math.Between(0, width),
-                        Phaser.Math.Between(0, height),
-                        Phaser.Math.Between(2, 6),
-                        Phaser.Display.Color.RandomRGB().color
-                    );
+            } else {
+                this.wrongCells.push({ row, col });
+                if (clickedCell.object) {
                     this.tweens.add({
-                        targets: particle,
-                        alpha: 0,
-                        scale: { from: 1, to: 3 },
-                        duration: 1000,
-                        onComplete: () => particle.destroy()
+                        targets: clickedCell.object,
+                        scale: { from: 1, to: 0.8 },
+                        yoyo: true,
+                        duration: 200
                     });
-                }, [], this);
-            }
-
-            // 「つぎのれべる」ボタン
-            const nextLevelButton = this.add.text(width / 2, height * 0.65, 'つぎのれべる', {
-                fontSize: `${height * 0.035}px`,
-                fill: '#fff',
-                backgroundColor: '#4CAF50',
-                padding: { x: 20, y: 10 },
-                borderRadius: 10,
-                align: 'center',
-                wordWrap: { width: width * 0.3 }
-            }).setOrigin(0.5).setInteractive();
-
-            // ホバー時のハイライト
-            nextLevelButton.on('pointerover', () => {
-                nextLevelButton.setStyle({ backgroundColor: '#388E3C' });
-            });
-
-            nextLevelButton.on('pointerout', () => {
-                nextLevelButton.setStyle({ backgroundColor: '#4CAF50' });
-            });
-
-            // ボタンクリック時のアニメーション
-            nextLevelButton.on('pointerdown', () => {
-                this.tweens.add({
-                    targets: nextLevelButton,
-                    scale: { from: 1, to: 0.95 },
-                    yoyo: true,
-                    duration: 100
-                });
-
-                this.scene.start('CountdownScene', { 
-                    displayTime: this.displayTime, 
-                    level: this.level + 1, 
-                    gridSize: this.gridSize, 
-                    gameMode: this.gameMode 
-                });
-            });
-        }
-    }
-
-    // シーン5: リトライ画面（ゲームオーバー画面）
-    class RetryScene extends Phaser.Scene {
-        constructor() {
-            super({ key: 'RetryScene' });
-        }
-
-        init(data) {
-            this.displayTime = data.displayTime;
-            this.level = data.level;
-            this.gridSize = data.gridSize;
-            this.gameMode = data.gameMode;
-            this.grid = data.grid;
-            this.wrongCells = data.wrongCells;
-        }
-
-        create() {
-            const { width, height } = this.scale;
-
-            // ゲームオーバーのテキスト
-            this.add.text(width / 2, height * 0.3, 'がーむおーばー', {
-                fontSize: `${height * 0.05}px`,
-                fill: '#FF0000',
-                align: 'center',
-                wordWrap: { width: width * 0.8 }
-            }).setOrigin(0.5);
-
-            // グリッドの描画
-            this.drawGrid();
-
-            // 正しい数字または色を全て表示
-            this.grid.forEach(cell => {
-                if (this.gameMode === 'number' && cell.number !== null) {
-                    const numberText = this.add.text(cell.x, cell.y, cell.number, {
-                        fontSize: `${cell.height * 0.3}px`,
-                        fill: '#fff',
-                        backgroundColor: '#FF5722',
-                        padding: { x: 10, y: 10 },
-                        borderRadius: 5,
-                        align: 'center',
-                        wordWrap: { width: cell.width * 0.8 }
-                    }).setOrigin(0.5);
-                } else if (this.gameMode === 'color' && cell.color !== null) {
-                    const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, cell.color)
-                        .setOrigin(0.5)
-                        .setAlpha(1);
                 }
-            });
 
-            // 間違ってクリックされたセルに「×」マークを表示
-            this.wrongCells.forEach(wrongCell => {
-                const cell = this.grid.find(c => c.row === wrongCell.row && c.col === wrongCell.col);
-                if (cell) {
-                    this.add.text(cell.x, cell.y, '×', {
-                        fontSize: `${height * 0.05}px`,
-                        fill: '#FF0000',
-                        align: 'center'
-                    }).setOrigin(0.5);
-                }
-            });
-
-            // エフェクト（簡易的な花火）
-            for (let i = 0; i < 20; i++) {
-                this.time.delayedCall(100 * i, () => {
-                    const particle = this.add.circle(
-                        Phaser.Math.Between(0, width),
-                        Phaser.Math.Between(0, height),
-                        Phaser.Math.Between(2, 6),
-                        Phaser.Display.Color.RandomRGB().color
-                    );
-                    this.tweens.add({
-                        targets: particle,
-                        alpha: 0,
-                        scale: { from: 1, to: 3 },
-                        duration: 1000,
-                        onComplete: () => particle.destroy()
-                    });
-                }, [], this);
-            }
-
-            // 「もういちど」ボタン
-            const retryButton = this.add.text(width / 2, height * 0.65, 'もういちど', {
-                fontSize: `${height * 0.035}px`,
-                fill: '#fff',
-                backgroundColor: '#FF5722',
-                padding: { x: 20, y: 10 },
-                borderRadius: 10,
-                align: 'center',
-                wordWrap: { width: width * 0.3 }
-            }).setOrigin(0.5).setInteractive();
-
-            // ホバー時のハイライト
-            retryButton.on('pointerover', () => {
-                retryButton.setStyle({ backgroundColor: '#D84315' });
-            });
-
-            retryButton.on('pointerout', () => {
-                retryButton.setStyle({ backgroundColor: '#FF5722' });
-            });
-
-            // ボタンクリック時のアニメーション
-            retryButton.on('pointerdown', () => {
-                this.tweens.add({
-                    targets: retryButton,
-                    scale: { from: 1, to: 0.95 },
-                    yoyo: true,
-                    duration: 100
-                });
-
-                this.scene.start('CountdownScene', { 
+                this.scene.start('RetryScene', { 
                     displayTime: this.displayTime, 
                     level: this.level, 
                     gridSize: this.gridSize, 
-                    gameMode: this.gameMode 
+                    gameMode: this.gameMode, 
+                    grid: this.grid, 
+                    wrongCells: this.wrongCells 
                 });
-            });
-
-            // 「さいしょから」ボタン
-            const restartButton = this.add.text(width / 2, height * 0.8, 'さいしょから', {
-                fontSize: `${height * 0.035}px`,
-                fill: '#fff',
-                backgroundColor: '#2196F3',
-                padding: { x: 20, y: 10 },
-                borderRadius: 10,
-                align: 'center',
-                wordWrap: { width: width * 0.3 }
-            }).setOrigin(0.5).setInteractive();
-
-            // ホバー時のハイライト
-            restartButton.on('pointerover', () => {
-                restartButton.setStyle({ backgroundColor: '#1976D2' });
-            });
-
-            restartButton.on('pointerout', () => {
-                restartButton.setStyle({ backgroundColor: '#2196F3' });
-            });
-
-            // ボタンクリック時のアニメーション
-            restartButton.on('pointerdown', () => {
-                this.tweens.add({
-                    targets: restartButton,
-                    scale: { from: 1, to: 0.95 },
-                    yoyo: true,
-                    duration: 100
-                });
-
-                this.scene.start('SelectionScene');
-            });
-        }
-
-        drawGrid() {
-            const { width, height } = this.scale;
-            const gridWidth = width * 0.8;
-            const gridHeight = height * 0.8;
-            const startX = (width - gridWidth) / 2;
-            const startY = (height - gridHeight) / 2;
-            const gridSize = this.gridSize;
-            const cellWidth = gridWidth / gridSize;
-            const cellHeight = gridHeight / gridSize;
-
-            // グリッドの線を描画
-            const graphics = this.add.graphics();
-            graphics.lineStyle(2, 0x000000, 1);
-
-            // 縦線
-            for (let i = 0; i <= gridSize; i++) {
-                graphics.moveTo(startX + i * cellWidth, startY);
-                graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
             }
-
-            // 横線
-            for (let i = 0; i <= gridSize; i++) {
-                graphics.moveTo(startX, startY + i * cellHeight);
-                graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
-            }
-
-            graphics.strokePath();
-        }
-    }
-
-    // シーン4: クリア画面
-    class ClearScene extends Phaser.Scene {
-        constructor() {
-            super({ key: 'ClearScene' });
-        }
-
-        init(data) {
-            this.displayTime = data.displayTime;
-            this.level = data.level;
-            this.gridSize = data.gridSize;
-            this.gameMode = data.gameMode;
-            this.messages = [
-                'すごい！',
-                'よくできた！',
-                'ナイス！',
-                'かんせい！',
-                'がんばったね！',
-                'きらきら！',
-                'ピカピカ！',
-                'スマート！',
-                'トップだ！',
-                'ファンタスティック！'
-            ];
-        }
-
-        create() {
-            const { width, height } = this.scale;
-
-            // クリアテキスト
-            this.add.text(width / 2, height * 0.3, 'クリア！', {
-                fontSize: `${height * 0.05}px`,
-                fill: '#FFD700',
-                align: 'center',
-                wordWrap: { width: width * 0.8 }
-            }).setOrigin(0.5);
-
-            // ランダムメッセージ
-            const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
-            this.add.text(width / 2, height / 2, randomMessage, {
-                fontSize: `${height * 0.035}px`,
-                fill: '#000',
-                align: 'center',
-                wordWrap: { width: width * 0.8 }
-            }).setOrigin(0.5);
-
-            // エフェクト（簡易的な花火）
-            for (let i = 0; i < 20; i++) {
-                this.time.delayedCall(100 * i, () => {
-                    const particle = this.add.circle(
-                        Phaser.Math.Between(0, width),
-                        Phaser.Math.Between(0, height),
-                        Phaser.Math.Between(2, 6),
-                        Phaser.Display.Color.RandomRGB().color
-                    );
-                    this.tweens.add({
-                        targets: particle,
-                        alpha: 0,
-                        scale: { from: 1, to: 3 },
-                        duration: 1000,
-                        onComplete: () => particle.destroy()
-                    });
-                }, [], this);
-            }
-
-            // 「つぎのれべる」ボタン
-            const nextLevelButton = this.add.text(width / 2, height * 0.65, 'つぎのれべる', {
-                fontSize: `${height * 0.035}px`,
-                fill: '#fff',
-                backgroundColor: '#4CAF50',
-                padding: { x: 20, y: 10 },
-                borderRadius: 10,
-                align: 'center',
-                wordWrap: { width: width * 0.3 }
-            }).setOrigin(0.5).setInteractive();
-
-            // ホバー時のハイライト
-            nextLevelButton.on('pointerover', () => {
-                nextLevelButton.setStyle({ backgroundColor: '#388E3C' });
-            });
-
-            nextLevelButton.on('pointerout', () => {
-                nextLevelButton.setStyle({ backgroundColor: '#4CAF50' });
-            });
-
-            // ボタンクリック時のアニメーション
-            nextLevelButton.on('pointerdown', () => {
-                this.tweens.add({
-                    targets: nextLevelButton,
-                    scale: { from: 1, to: 0.95 },
-                    yoyo: true,
-                    duration: 100
-                });
-
-                this.scene.start('CountdownScene', { 
-                    displayTime: this.displayTime, 
-                    level: this.level + 1, 
-                    gridSize: this.gridSize, 
-                    gameMode: this.gameMode 
-                });
-            });
-        }
-    }
-
-    // シーン5: リトライ画面（ゲームオーバー画面）
-    class RetryScene extends Phaser.Scene {
-        constructor() {
-            super({ key: 'RetryScene' });
-        }
-
-        init(data) {
-            this.displayTime = data.displayTime;
-            this.level = data.level;
-            this.gridSize = data.gridSize;
-            this.gameMode = data.gameMode;
-            this.grid = data.grid;
-            this.wrongCells = data.wrongCells;
-        }
-
-        create() {
-            const { width, height } = this.scale;
-
-            // ゲームオーバーのテキスト
-            this.add.text(width / 2, height * 0.3, 'がーむおーばー', {
-                fontSize: `${height * 0.05}px`,
-                fill: '#FF0000',
-                align: 'center',
-                wordWrap: { width: width * 0.8 }
-            }).setOrigin(0.5);
-
-            // グリッドの描画
-            this.drawGrid();
-
-            // 正しい数字または色を全て表示
-            this.grid.forEach(cell => {
-                if (this.gameMode === 'number' && cell.number !== null) {
-                    const numberText = this.add.text(cell.x, cell.y, cell.number, {
-                        fontSize: `${cell.height * 0.3}px`,
-                        fill: '#fff',
-                        backgroundColor: '#FF5722',
-                        padding: { x: 10, y: 10 },
-                        borderRadius: 5,
-                        align: 'center',
-                        wordWrap: { width: cell.width * 0.8 }
-                    }).setOrigin(0.5);
-                } else if (this.gameMode === 'color' && cell.color !== null) {
-                    const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, cell.color)
-                        .setOrigin(0.5)
-                        .setAlpha(1);
-                }
-            });
-
-            // 間違ってクリックされたセルに「×」マークを表示
-            this.wrongCells.forEach(wrongCell => {
-                const cell = this.grid.find(c => c.row === wrongCell.row && c.col === wrongCell.col);
-                if (cell) {
-                    this.add.text(cell.x, cell.y, '×', {
-                        fontSize: `${height * 0.05}px`,
-                        fill: '#FF0000',
-                        align: 'center'
-                    }).setOrigin(0.5);
-                }
-            });
-
-            // エフェクト（簡易的な花火）
-            for (let i = 0; i < 20; i++) {
-                this.time.delayedCall(100 * i, () => {
-                    const particle = this.add.circle(
-                        Phaser.Math.Between(0, width),
-                        Phaser.Math.Between(0, height),
-                        Phaser.Math.Between(2, 6),
-                        Phaser.Display.Color.RandomRGB().color
-                    );
-                    this.tweens.add({
-                        targets: particle,
-                        alpha: 0,
-                        scale: { from: 1, to: 3 },
-                        duration: 1000,
-                        onComplete: () => particle.destroy()
-                    });
-                }, [], this);
-            }
-
-            // 「もういちど」ボタン
-            const retryButton = this.add.text(width / 2, height * 0.65, 'もういちど', {
-                fontSize: `${height * 0.035}px`,
-                fill: '#fff',
-                backgroundColor: '#FF5722',
-                padding: { x: 20, y: 10 },
-                borderRadius: 10,
-                align: 'center',
-                wordWrap: { width: width * 0.3 }
-            }).setOrigin(0.5).setInteractive();
-
-            // ホバー時のハイライト
-            retryButton.on('pointerover', () => {
-                retryButton.setStyle({ backgroundColor: '#D84315' });
-            });
-
-            retryButton.on('pointerout', () => {
-                retryButton.setStyle({ backgroundColor: '#FF5722' });
-            });
-
-            // ボタンクリック時のアニメーション
-            retryButton.on('pointerdown', () => {
-                this.tweens.add({
-                    targets: retryButton,
-                    scale: { from: 1, to: 0.95 },
-                    yoyo: true,
-                    duration: 100
-                });
-
-                this.scene.start('CountdownScene', { 
+        } else if (this.gameMode === 'color') {
+            // 色モード
+            if (clickedCell.color === null) {
+                this.wrongCells.push({ row, col });
+                this.scene.start('RetryScene', { 
                     displayTime: this.displayTime, 
                     level: this.level, 
                     gridSize: this.gridSize, 
-                    gameMode: this.gameMode 
+                    gameMode: this.gameMode, 
+                    grid: this.grid, 
+                    wrongCells: this.wrongCells 
                 });
-            });
-
-            // 「さいしょから」ボタン
-            const restartButton = this.add.text(width / 2, height * 0.8, 'さいしょから', {
-                fontSize: `${height * 0.035}px`,
-                fill: '#fff',
-                backgroundColor: '#2196F3',
-                padding: { x: 20, y: 10 },
-                borderRadius: 10,
-                align: 'center',
-                wordWrap: { width: width * 0.3 }
-            }).setOrigin(0.5).setInteractive();
-
-            // ホバー時のハイライト
-            restartButton.on('pointerover', () => {
-                restartButton.setStyle({ backgroundColor: '#1976D2' });
-            });
-
-            restartButton.on('pointerout', () => {
-                restartButton.setStyle({ backgroundColor: '#2196F3' });
-            });
-
-            // ボタンクリック時のアニメーション
-            restartButton.on('pointerdown', () => {
-                this.tweens.add({
-                    targets: restartButton,
-                    scale: { from: 1, to: 0.95 },
-                    yoyo: true,
-                    duration: 100
-                });
-
-                this.scene.start('SelectionScene');
-            });
-        }
-
-        drawGrid() {
-            const { width, height } = this.scale;
-            const gridWidth = width * 0.8;
-            const gridHeight = height * 0.8;
-            const startX = (width - gridWidth) / 2;
-            const startY = (height - gridHeight) / 2;
-            const gridSize = this.gridSize;
-            const cellWidth = gridWidth / gridSize;
-            const cellHeight = gridHeight / gridSize;
-
-            // グリッドの線を描画
-            const graphics = this.add.graphics();
-            graphics.lineStyle(2, 0x000000, 1);
-
-            // 縦線
-            for (let i = 0; i <= gridSize; i++) {
-                graphics.moveTo(startX + i * cellWidth, startY);
-                graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
+                return;
             }
 
-            // 横線
-            for (let i = 0; i <= gridSize; i++) {
-                graphics.moveTo(startX, startY + i * cellHeight);
-                graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
-            }
+            if (clickedCell.clicked) return;
 
-            graphics.strokePath();
+            // クリックされた色ブロックを記録
+            clickedCell.clicked = true;
+            clickedCell.object.setAlpha(1);
+            clickedCell.zone.disableInteractive();
+
+            this.tweens.add({
+                targets: clickedCell.object,
+                scale: { from: 1, to: 1.2 },
+                yoyo: true,
+                duration: 200
+            });
+
+            this.clickedTargets += 1;
+
+            if (this.clickedTargets >= this.totalTargets) {
+                this.time.delayedCall(500, () => {
+                    this.scene.start('ClearScene', { 
+                        displayTime: this.displayTime, 
+                        level: this.level, 
+                        gridSize: this.gridSize, 
+                        gameMode: this.gameMode 
+                    });
+                }, [], this);
+            }
         }
     }
-
-    // Phaserの設定
-    const config = {
-        type: Phaser.AUTO,
-        parent: 'game-container',
-        width: window.innerWidth,
-        height: window.innerHeight,
-        backgroundColor: '#f0f8ff',
-        scene: [SelectionScene, CountdownScene, GameScene, ClearScene, RetryScene],
-        scale: {
-            mode: Phaser.Scale.FIT,
-            autoCenter: Phaser.Scale.CENTER_BOTH,
-            width: window.innerWidth,
-            height: window.innerHeight
-        }
-    };
-
-    // ゲームインスタンスの作成
-    const game = new Phaser.Game(config);
 }
+
+// シーン4: クリア画面
+class ClearScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'ClearScene' });
+    }
+
+    init(data) {
+        this.displayTime = data.displayTime;
+        this.level = data.level;
+        this.gridSize = data.gridSize;
+        this.gameMode = data.gameMode;
+        this.messages = [
+            'すごい！',
+            'よくできた！',
+            'ナイス！',
+            'かんせい！',
+            'がんばったね！',
+            'きらきら！',
+            'ピカピカ！',
+            'スマート！',
+            'トップだ！',
+            'ファンタスティック！'
+        ];
+    }
+
+    create() {
+        const { width, height } = this.scale;
+
+        // クリアテキスト
+        this.add.text(width / 2, height * 0.3, 'クリア！', {
+            fontSize: `${height * 0.05}px`,
+            fill: '#FFD700',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
+        }).setOrigin(0.5);
+
+        // ランダムメッセージ
+        const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
+        this.add.text(width / 2, height / 2, randomMessage, {
+            fontSize: `${height * 0.035}px`,
+            fill: '#000',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
+        }).setOrigin(0.5);
+
+        // エフェクト（簡易的な花火）
+        for (let i = 0; i < 20; i++) {
+            this.time.delayedCall(100 * i, () => {
+                const particle = this.add.circle(
+                    Phaser.Math.Between(0, width),
+                    Phaser.Math.Between(0, height),
+                    Phaser.Math.Between(2, 6),
+                    Phaser.Display.Color.RandomRGB().color
+                );
+                this.tweens.add({
+                    targets: particle,
+                    alpha: 0,
+                    scale: { from: 1, to: 3 },
+                    duration: 1000,
+                    onComplete: () => particle.destroy()
+                });
+            }, [], this);
+        }
+
+        // 「つぎのれべる」ボタン
+        const nextLevelButton = this.add.text(width / 2, height * 0.65, 'つぎのれべる', {
+            fontSize: `${height * 0.035}px`,
+            fill: '#fff',
+            backgroundColor: '#4CAF50',
+            padding: { x: 20, y: 10 },
+            borderRadius: 10,
+            align: 'center',
+            wordWrap: { width: width * 0.3 }
+        }).setOrigin(0.5).setInteractive();
+
+        // ホバー時のハイライト
+        nextLevelButton.on('pointerover', () => {
+            nextLevelButton.setStyle({ backgroundColor: '#388E3C' });
+        });
+
+        nextLevelButton.on('pointerout', () => {
+            nextLevelButton.setStyle({ backgroundColor: '#4CAF50' });
+        });
+
+        // ボタンクリック時のアニメーション
+        nextLevelButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: nextLevelButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
+            this.scene.start('CountdownScene', { 
+                displayTime: this.displayTime, 
+                level: this.level + 1, 
+                gridSize: this.gridSize, 
+                gameMode: this.gameMode 
+            });
+        });
+    }
+}
+
+// シーン5: リトライ画面（ゲームオーバー画面）
+class RetryScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'RetryScene' });
+    }
+
+    init(data) {
+        this.displayTime = data.displayTime;
+        this.level = data.level;
+        this.gridSize = data.gridSize;
+        this.gameMode = data.gameMode;
+        this.grid = data.grid;
+        this.wrongCells = data.wrongCells;
+    }
+
+    create() {
+        const { width, height } = this.scale;
+
+        // ゲームオーバーのテキスト
+        this.add.text(width / 2, height * 0.3, 'がーむおーばー', {
+            fontSize: `${height * 0.05}px`,
+            fill: '#FF0000',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
+        }).setOrigin(0.5);
+
+        // グリッドの描画
+        this.drawGrid();
+
+        // 正しい数字または色を全て表示
+        this.grid.forEach(cell => {
+            if (this.gameMode === 'number' && cell.number !== null) {
+                const numberText = this.add.text(cell.x, cell.y, cell.number, {
+                    fontSize: `${cell.height * 0.3}px`,
+                    fill: '#fff',
+                    backgroundColor: '#FF5722',
+                    padding: { x: 10, y: 10 },
+                    borderRadius: 5,
+                    align: 'center',
+                    wordWrap: { width: cell.width * 0.8 }
+                }).setOrigin(0.5);
+            } else if (this.gameMode === 'color' && cell.color !== null) {
+                const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, cell.color)
+                    .setOrigin(0.5)
+                    .setAlpha(1);
+            }
+        });
+
+        // 間違ってクリックされたセルに「×」マークを表示
+        this.wrongCells.forEach(wrongCell => {
+            const cell = this.grid.find(c => c.row === wrongCell.row && c.col === wrongCell.col);
+            if (cell) {
+                this.add.text(cell.x, cell.y, '×', {
+                    fontSize: `${height * 0.05}px`,
+                    fill: '#FF0000',
+                    align: 'center'
+                }).setOrigin(0.5);
+            }
+        });
+
+        // エフェクト（簡易的な花火）
+        for (let i = 0; i < 20; i++) {
+            this.time.delayedCall(100 * i, () => {
+                const particle = this.add.circle(
+                    Phaser.Math.Between(0, width),
+                    Phaser.Math.Between(0, height),
+                    Phaser.Math.Between(2, 6),
+                    Phaser.Display.Color.RandomRGB().color
+                );
+                this.tweens.add({
+                    targets: particle,
+                    alpha: 0,
+                    scale: { from: 1, to: 3 },
+                    duration: 1000,
+                    onComplete: () => particle.destroy()
+                });
+            }, [], this);
+        }
+
+        // 「もういちど」ボタン
+        const retryButton = this.add.text(width / 2, height * 0.65, 'もういちど', {
+            fontSize: `${height * 0.035}px`,
+            fill: '#fff',
+            backgroundColor: '#FF5722',
+            padding: { x: 20, y: 10 },
+            borderRadius: 10,
+            align: 'center',
+            wordWrap: { width: width * 0.3 }
+        }).setOrigin(0.5).setInteractive();
+
+        // ホバー時のハイライト
+        retryButton.on('pointerover', () => {
+            retryButton.setStyle({ backgroundColor: '#D84315' });
+        });
+
+        retryButton.on('pointerout', () => {
+            retryButton.setStyle({ backgroundColor: '#FF5722' });
+        });
+
+        // ボタンクリック時のアニメーション
+        retryButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: retryButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
+            this.scene.start('GameScene', { 
+                displayTime: this.displayTime, 
+                level: this.level, 
+                gridSize: this.gridSize, 
+                gameMode: this.gameMode 
+            });
+        });
+
+        // 「さいしょから」ボタン
+        const restartButton = this.add.text(width / 2, height * 0.8, 'さいしょから', {
+            fontSize: `${height * 0.035}px`,
+            fill: '#fff',
+            backgroundColor: '#2196F3',
+            padding: { x: 20, y: 10 },
+            borderRadius: 10,
+            align: 'center',
+            wordWrap: { width: width * 0.3 }
+        }).setOrigin(0.5).setInteractive();
+
+        // ホバー時のハイライト
+        restartButton.on('pointerover', () => {
+            restartButton.setStyle({ backgroundColor: '#1976D2' });
+        });
+
+        restartButton.on('pointerout', () => {
+            restartButton.setStyle({ backgroundColor: '#2196F3' });
+        });
+
+        // ボタンクリック時のアニメーション
+        restartButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: restartButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
+            this.scene.start('SelectionScene');
+        });
+    }
+
+    drawGrid() {
+        const { width, height } = this.scale;
+        const gridWidth = width * 0.8;
+        const gridHeight = height * 0.8;
+        const startX = (width - gridWidth) / 2;
+        const startY = (height - gridHeight) / 2;
+        const gridSize = this.gridSize;
+        const cellWidth = gridWidth / gridSize;
+        const cellHeight = gridHeight / gridSize;
+
+        // グリッドの線を描画
+        const graphics = this.add.graphics();
+        graphics.lineStyle(2, 0x000000, 1);
+
+        // 縦線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX + i * cellWidth, startY);
+            graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
+        }
+
+        // 横線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX, startY + i * cellHeight);
+            graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
+        }
+
+        graphics.strokePath();
+    }
+}
+
+// シーン4: クリア画面
+class ClearScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'ClearScene' });
+    }
+
+    init(data) {
+        this.displayTime = data.displayTime;
+        this.level = data.level;
+        this.gridSize = data.gridSize;
+        this.gameMode = data.gameMode;
+        this.messages = [
+            'すごい！',
+            'よくできた！',
+            'ナイス！',
+            'かんせい！',
+            'がんばったね！',
+            'きらきら！',
+            'ピカピカ！',
+            'スマート！',
+            'トップだ！',
+            'ファンタスティック！'
+        ];
+    }
+
+    create() {
+        const { width, height } = this.scale;
+
+        // クリアテキスト
+        this.add.text(width / 2, height * 0.3, 'クリア！', {
+            fontSize: `${height * 0.05}px`,
+            fill: '#FFD700',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
+        }).setOrigin(0.5);
+
+        // ランダムメッセージ
+        const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
+        this.add.text(width / 2, height / 2, randomMessage, {
+            fontSize: `${height * 0.035}px`,
+            fill: '#000',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
+        }).setOrigin(0.5);
+
+        // エフェクト（簡易的な花火）
+        for (let i = 0; i < 20; i++) {
+            this.time.delayedCall(100 * i, () => {
+                const particle = this.add.circle(
+                    Phaser.Math.Between(0, width),
+                    Phaser.Math.Between(0, height),
+                    Phaser.Math.Between(2, 6),
+                    Phaser.Display.Color.RandomRGB().color
+                );
+                this.tweens.add({
+                    targets: particle,
+                    alpha: 0,
+                    scale: { from: 1, to: 3 },
+                    duration: 1000,
+                    onComplete: () => particle.destroy()
+                });
+            }, [], this);
+        }
+
+        // 「つぎのれべる」ボタン
+        const nextLevelButton = this.add.text(width / 2, height * 0.65, 'つぎのれべる', {
+            fontSize: `${height * 0.035}px`,
+            fill: '#fff',
+            backgroundColor: '#4CAF50',
+            padding: { x: 20, y: 10 },
+            borderRadius: 10,
+            align: 'center',
+            wordWrap: { width: width * 0.3 }
+        }).setOrigin(0.5).setInteractive();
+
+        // ホバー時のハイライト
+        nextLevelButton.on('pointerover', () => {
+            nextLevelButton.setStyle({ backgroundColor: '#388E3C' });
+        });
+
+        nextLevelButton.on('pointerout', () => {
+            nextLevelButton.setStyle({ backgroundColor: '#4CAF50' });
+        });
+
+        // ボタンクリック時のアニメーション
+        nextLevelButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: nextLevelButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
+            this.scene.start('CountdownScene', { 
+                displayTime: this.displayTime, 
+                level: this.level + 1, 
+                gridSize: this.gridSize, 
+                gameMode: this.gameMode 
+            });
+        });
+    }
+}
+
+// シーン5: リトライ画面（ゲームオーバー画面）
+class RetryScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'RetryScene' });
+    }
+
+    init(data) {
+        this.displayTime = data.displayTime;
+        this.level = data.level;
+        this.gridSize = data.gridSize;
+        this.gameMode = data.gameMode;
+        this.grid = data.grid;
+        this.wrongCells = data.wrongCells;
+    }
+
+    create() {
+        const { width, height } = this.scale;
+
+        // ゲームオーバーのテキスト
+        this.add.text(width / 2, height * 0.3, 'がーむおーばー', {
+            fontSize: `${height * 0.05}px`,
+            fill: '#FF0000',
+            align: 'center',
+            wordWrap: { width: width * 0.8 }
+        }).setOrigin(0.5);
+
+        // グリッドの描画
+        this.drawGrid();
+
+        // 正しい数字または色を全て表示
+        this.grid.forEach(cell => {
+            if (this.gameMode === 'number' && cell.number !== null) {
+                const numberText = this.add.text(cell.x, cell.y, cell.number, {
+                    fontSize: `${cell.height * 0.3}px`,
+                    fill: '#fff',
+                    backgroundColor: '#FF5722',
+                    padding: { x: 10, y: 10 },
+                    borderRadius: 5,
+                    align: 'center',
+                    wordWrap: { width: cell.width * 0.8 }
+                }).setOrigin(0.5);
+            } else if (this.gameMode === 'color' && cell.color !== null) {
+                const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, cell.color)
+                    .setOrigin(0.5)
+                    .setAlpha(1);
+            }
+        });
+
+        // 間違ってクリックされたセルに「×」マークを表示
+        this.wrongCells.forEach(wrongCell => {
+            const cell = this.grid.find(c => c.row === wrongCell.row && c.col === wrongCell.col);
+            if (cell) {
+                this.add.text(cell.x, cell.y, '×', {
+                    fontSize: `${height * 0.05}px`,
+                    fill: '#FF0000',
+                    align: 'center'
+                }).setOrigin(0.5);
+            }
+        });
+
+        // エフェクト（簡易的な花火）
+        for (let i = 0; i < 20; i++) {
+            this.time.delayedCall(100 * i, () => {
+                const particle = this.add.circle(
+                    Phaser.Math.Between(0, width),
+                    Phaser.Math.Between(0, height),
+                    Phaser.Math.Between(2, 6),
+                    Phaser.Display.Color.RandomRGB().color
+                );
+                this.tweens.add({
+                    targets: particle,
+                    alpha: 0,
+                    scale: { from: 1, to: 3 },
+                    duration: 1000,
+                    onComplete: () => particle.destroy()
+                });
+            }, [], this);
+        }
+
+        // 「もういちど」ボタン
+        const retryButton = this.add.text(width / 2, height * 0.65, 'もういちど', {
+            fontSize: `${height * 0.035}px`,
+            fill: '#fff',
+            backgroundColor: '#FF5722',
+            padding: { x: 20, y: 10 },
+            borderRadius: 10,
+            align: 'center',
+            wordWrap: { width: width * 0.3 }
+        }).setOrigin(0.5).setInteractive();
+
+        // ホバー時のハイライト
+        retryButton.on('pointerover', () => {
+            retryButton.setStyle({ backgroundColor: '#D84315' });
+        });
+
+        retryButton.on('pointerout', () => {
+            retryButton.setStyle({ backgroundColor: '#FF5722' });
+        });
+
+        // ボタンクリック時のアニメーション
+        retryButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: retryButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
+            this.scene.start('GameScene', { 
+                displayTime: this.displayTime, 
+                level: this.level, 
+                gridSize: this.gridSize, 
+                gameMode: this.gameMode 
+            });
+        });
+
+        // 「さいしょから」ボタン
+        const restartButton = this.add.text(width / 2, height * 0.8, 'さいしょから', {
+            fontSize: `${height * 0.035}px`,
+            fill: '#fff',
+            backgroundColor: '#2196F3',
+            padding: { x: 20, y: 10 },
+            borderRadius: 10,
+            align: 'center',
+            wordWrap: { width: width * 0.3 }
+        }).setOrigin(0.5).setInteractive();
+
+        // ホバー時のハイライト
+        restartButton.on('pointerover', () => {
+            restartButton.setStyle({ backgroundColor: '#1976D2' });
+        });
+
+        restartButton.on('pointerout', () => {
+            restartButton.setStyle({ backgroundColor: '#2196F3' });
+        });
+
+        // ボタンクリック時のアニメーション
+        restartButton.on('pointerdown', () => {
+            this.tweens.add({
+                targets: restartButton,
+                scale: { from: 1, to: 0.95 },
+                yoyo: true,
+                duration: 100
+            });
+
+            this.scene.start('SelectionScene');
+        });
+    }
+
+    drawGrid() {
+        const { width, height } = this.scale;
+        const gridWidth = width * 0.8;
+        const gridHeight = height * 0.8;
+        const startX = (width - gridWidth) / 2;
+        const startY = (height - gridHeight) / 2;
+        const gridSize = this.gridSize;
+        const cellWidth = gridWidth / gridSize;
+        const cellHeight = gridHeight / gridSize;
+
+        // グリッドの線を描画
+        const graphics = this.add.graphics();
+        graphics.lineStyle(2, 0x000000, 1);
+
+        // 縦線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX + i * cellWidth, startY);
+            graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
+        }
+
+        // 横線
+        for (let i = 0; i <= gridSize; i++) {
+            graphics.moveTo(startX, startY + i * cellHeight);
+            graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
+        }
+
+        graphics.strokePath();
+    }
+}
+
+// Phaserの設定
+const config = {
+    type: Phaser.AUTO,
+    parent: 'game-container',
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: '#f0f8ff',
+    scene: [SelectionScene, CountdownScene, GameScene, ClearScene, RetryScene],
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: window.innerWidth,
+        height: window.innerHeight
+    }
+};
+
+// ゲームインスタンスの作成
+const game = new Phaser.Game(config);
 
 // ウィンドウリサイズ時の対応
 window.addEventListener('resize', () => {
