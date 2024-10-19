@@ -38,6 +38,7 @@ class SelectionScene extends Phaser.Scene {
         const timeStartY = height * 0.2;
 
         this.selectedTime = null;
+        this.timeButtons = [];
 
         times.forEach((time, index) => {
             const button = this.add.text(timeStartX + index * (buttonWidth + buttonSpacing), timeStartY, time.label, {
@@ -52,15 +53,20 @@ class SelectionScene extends Phaser.Scene {
                 .setOrigin(0.5)
                 .setInteractive()
                 .setFixedSize(buttonWidth, buttonHeight)
-                .setData('value', time.value);
+                .setData('value', time.value)
+                .setName(`timeButton_${index}`);
 
             // ホバー時のハイライト
             button.on('pointerover', () => {
-                button.setStyle({ backgroundColor: '#1976D2' });
+                if (button !== this.selectedTimeButton) {
+                    button.setStyle({ backgroundColor: '#1976D2' });
+                }
             });
 
             button.on('pointerout', () => {
-                button.setStyle({ backgroundColor: '#2196F3' });
+                if (button !== this.selectedTimeButton) {
+                    button.setStyle({ backgroundColor: '#2196F3' });
+                }
             });
 
             // ボタンクリック時のアニメーションと選択
@@ -71,10 +77,10 @@ class SelectionScene extends Phaser.Scene {
                     yoyo: true,
                     duration: 100
                 });
-                this.selectedTime = button.getData('value');
-                this.updateButtonStyles(button, times.length, timeStartX, buttonWidth, buttonSpacing, timeStartY);
-                this.events.emit('selectionChanged');
+                this.selectTime(button, time.value);
             });
+
+            this.timeButtons.push(button);
         });
 
         // グリッドサイズ選択セクション
@@ -96,6 +102,7 @@ class SelectionScene extends Phaser.Scene {
         const gridStartY = height * 0.35;
 
         this.selectedGridSize = null;
+        this.gridSizeButtons = [];
 
         gridSizes.forEach((size, index) => {
             const button = this.add.text(gridStartX + index * (buttonWidth + buttonSpacing), gridStartY, size.label, {
@@ -110,15 +117,20 @@ class SelectionScene extends Phaser.Scene {
                 .setOrigin(0.5)
                 .setInteractive()
                 .setFixedSize(buttonWidth, buttonHeight)
-                .setData('value', size.value);
+                .setData('value', size.value)
+                .setName(`gridSizeButton_${index}`);
 
             // ホバー時のハイライト
             button.on('pointerover', () => {
-                button.setStyle({ backgroundColor: '#1976D2' });
+                if (button !== this.selectedGridSizeButton) {
+                    button.setStyle({ backgroundColor: '#1976D2' });
+                }
             });
 
             button.on('pointerout', () => {
-                button.setStyle({ backgroundColor: '#2196F3' });
+                if (button !== this.selectedGridSizeButton) {
+                    button.setStyle({ backgroundColor: '#2196F3' });
+                }
             });
 
             // ボタンクリック時のアニメーションと選択
@@ -129,10 +141,10 @@ class SelectionScene extends Phaser.Scene {
                     yoyo: true,
                     duration: 100
                 });
-                this.selectedGridSize = button.getData('value');
-                this.updateButtonStyles(button, gridSizes.length, gridStartX, buttonWidth, buttonSpacing, gridStartY);
-                this.events.emit('selectionChanged');
+                this.selectGridSize(button, size.value);
             });
+
+            this.gridSizeButtons.push(button);
         });
 
         // ゲームモード選択セクション
@@ -153,6 +165,7 @@ class SelectionScene extends Phaser.Scene {
         const modeStartY = height * 0.5;
 
         this.selectedGameMode = null;
+        this.gameModeButtons = [];
 
         gameModes.forEach((mode, index) => {
             const button = this.add.text(modeStartX + index * (buttonWidth + buttonSpacing), modeStartY, mode.label, {
@@ -167,15 +180,20 @@ class SelectionScene extends Phaser.Scene {
                 .setOrigin(0.5)
                 .setInteractive()
                 .setFixedSize(buttonWidth, buttonHeight)
-                .setData('value', mode.value);
+                .setData('value', mode.value)
+                .setName(`gameModeButton_${index}`);
 
             // ホバー時のハイライト
             button.on('pointerover', () => {
-                button.setStyle({ backgroundColor: '#1976D2' });
+                if (button !== this.selectedGameModeButton) {
+                    button.setStyle({ backgroundColor: '#1976D2' });
+                }
             });
 
             button.on('pointerout', () => {
-                button.setStyle({ backgroundColor: '#2196F3' });
+                if (button !== this.selectedGameModeButton) {
+                    button.setStyle({ backgroundColor: '#2196F3' });
+                }
             });
 
             // ボタンクリック時のアニメーションと選択
@@ -186,10 +204,10 @@ class SelectionScene extends Phaser.Scene {
                     yoyo: true,
                     duration: 100
                 });
-                this.selectedGameMode = button.getData('value');
-                this.updateButtonStyles(button, gameModes.length, modeStartX, buttonWidth, buttonSpacing, modeStartY);
-                this.events.emit('selectionChanged');
+                this.selectGameMode(button, mode.value);
             });
+
+            this.gameModeButtons.push(button);
         });
 
         // スタートボタン
@@ -224,10 +242,7 @@ class SelectionScene extends Phaser.Scene {
             }
         };
 
-        // リスナーを追加して選択時にスタートボタンを更新
-        this.events.on('selectionChanged', updateStartButton, this);
-
-        // スタートボタンクリック時の処理
+        // スタートボタンのホバーとクリックイベント
         startButton.on('pointerover', () => {
             if (startButton.getData('enabled')) {
                 startButton.setStyle({ backgroundColor: '#388E3C' });
@@ -256,17 +271,44 @@ class SelectionScene extends Phaser.Scene {
                 });
             }
         });
+
+        // リスナーを追加して選択時にスタートボタンを更新
+        this.events.on('selectionChanged', updateStartButton, this);
     }
 
-    // ヘルパー関数: 選択済みボタンのスタイルを更新
-    SelectionScene.prototype.updateButtonStyles = function(selectedButton, totalButtons, startX, buttonWidth, buttonSpacing, startY) {
-        for (let i = 0; i < totalButtons; i++) {
-            const button = this.children.getByName(`button_${startY}_${i}`);
-            if (button && button !== selectedButton) {
-                button.setStyle({ backgroundColor: '#2196F3' });
-            }
+    // 選択された表示時間の処理
+    selectTime(button, value) {
+        if (this.selectedTimeButton) {
+            this.selectedTimeButton.setStyle({ backgroundColor: '#2196F3' });
         }
-    };
+        this.selectedTime = value;
+        this.selectedTimeButton = button;
+        button.setStyle({ backgroundColor: '#4CAF50' });
+        this.events.emit('selectionChanged');
+    }
+
+    // 選択されたグリッドサイズの処理
+    selectGridSize(button, value) {
+        if (this.selectedGridSizeButton) {
+            this.selectedGridSizeButton.setStyle({ backgroundColor: '#2196F3' });
+        }
+        this.selectedGridSize = value;
+        this.selectedGridSizeButton = button;
+        button.setStyle({ backgroundColor: '#4CAF50' });
+        this.events.emit('selectionChanged');
+    }
+
+    // 選択されたゲームモードの処理
+    selectGameMode(button, value) {
+        if (this.selectedGameModeButton) {
+            this.selectedGameModeButton.setStyle({ backgroundColor: '#2196F3' });
+        }
+        this.selectedGameMode = value;
+        this.selectedGameModeButton = button;
+        button.setStyle({ backgroundColor: '#4CAF50' });
+        this.events.emit('selectionChanged');
+    }
+}
 
 // シーン2: カウントダウン
 class CountdownScene extends Phaser.Scene {
@@ -558,6 +600,8 @@ class GameScene extends Phaser.Scene {
                 .setInteractive();
             cell.object = colorBlock;
         });
+
+        this.totalTargets = selectedColors.length;
     }
 
     hideElements() {
@@ -961,7 +1005,7 @@ class RetryScene extends Phaser.Scene {
     }
 }
 
-// シーン4: クリア画面
+// シーン4: クリア画面（重複定義を削除済み）
 class ClearScene extends Phaser.Scene {
     constructor() {
         super({ key: 'ClearScene' });
