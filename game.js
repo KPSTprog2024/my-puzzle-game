@@ -38,6 +38,7 @@ class SelectionScene extends Phaser.Scene {
         const timeStartY = height * 0.2;
 
         this.selectedTime = null;
+        this.selectedTimeButton = null;
         this.timeButtons = [];
 
         times.forEach((time, index) => {
@@ -102,6 +103,7 @@ class SelectionScene extends Phaser.Scene {
         const gridStartY = height * 0.35;
 
         this.selectedGridSize = null;
+        this.selectedGridSizeButton = null;
         this.gridSizeButtons = [];
 
         gridSizes.forEach((size, index) => {
@@ -165,6 +167,7 @@ class SelectionScene extends Phaser.Scene {
         const modeStartY = height * 0.5;
 
         this.selectedGameMode = null;
+        this.selectedGameModeButton = null;
         this.gameModeButtons = [];
 
         gameModes.forEach((mode, index) => {
@@ -277,7 +280,7 @@ class SelectionScene extends Phaser.Scene {
     }
 
     // 選択された表示時間の処理
-    SelectionScene.prototype.selectTime = function(button, value) {
+    selectTime(button, value) {
         if (this.selectedTimeButton) {
             this.selectedTimeButton.setStyle({ backgroundColor: '#2196F3' });
         }
@@ -285,10 +288,10 @@ class SelectionScene extends Phaser.Scene {
         this.selectedTimeButton = button;
         button.setStyle({ backgroundColor: '#4CAF50' });
         this.events.emit('selectionChanged');
-    };
+    }
 
     // 選択されたグリッドサイズの処理
-    SelectionScene.prototype.selectGridSize = function(button, value) {
+    selectGridSize(button, value) {
         if (this.selectedGridSizeButton) {
             this.selectedGridSizeButton.setStyle({ backgroundColor: '#2196F3' });
         }
@@ -296,10 +299,10 @@ class SelectionScene extends Phaser.Scene {
         this.selectedGridSizeButton = button;
         button.setStyle({ backgroundColor: '#4CAF50' });
         this.events.emit('selectionChanged');
-    };
+    }
 
     // 選択されたゲームモードの処理
-    SelectionScene.prototype.selectGameMode = function(button, value) {
+    selectGameMode(button, value) {
         if (this.selectedGameModeButton) {
             this.selectedGameModeButton.setStyle({ backgroundColor: '#2196F3' });
         }
@@ -307,7 +310,8 @@ class SelectionScene extends Phaser.Scene {
         this.selectedGameModeButton = button;
         button.setStyle({ backgroundColor: '#4CAF50' });
         this.events.emit('selectionChanged');
-    };
+    }
+}
 
 // シーン2: カウントダウン
 class CountdownScene extends Phaser.Scene {
