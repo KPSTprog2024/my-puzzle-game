@@ -17,7 +17,7 @@ const COLORS = {
 function calculateResponsiveSize(scene, baseSize) {
     const { width, height } = scene.scale;
     const minDimension = Math.min(width, height);
-    return Math.max(Math.round(minDimension * baseSize), 12); // 最小フォントサイズを12pxに設定
+    return Math.max(Math.round(minDimension * baseSize), 16); // 最小フォントサイズを16pxに設定
 }
 
 // カスタムボタン作成関数
@@ -27,10 +27,10 @@ function createCustomButton(scene, text, x, y, width, height, backgroundColor, h
     // ボタン背景をGraphicsで描画
     const buttonBackground = scene.add.graphics();
     buttonBackground.fillStyle(backgroundColor, 1);
-    buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 10);
+    buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 20);
 
     // テキストを追加
-    const fontSize = calculateResponsiveSize(scene, 0.02); // ベースのフォントサイズを調整
+    const fontSize = calculateResponsiveSize(scene, 0.04); // フォントサイズを大きく調整
     const buttonText = scene.add.text(0, 0, text, {
         fontSize: `${fontSize}px`,
         fill: '#fff',
@@ -53,11 +53,11 @@ function createCustomButton(scene, text, x, y, width, height, backgroundColor, h
         if (buttonContainer.selected) {
             buttonBackground.clear();
             buttonBackground.fillStyle(COLORS.selectedHover, 1);
-            buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 10);
+            buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 20);
         } else {
             buttonBackground.clear();
             buttonBackground.fillStyle(buttonContainer.hoverColor, 1);
-            buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 10);
+            buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 20);
         }
     });
 
@@ -65,11 +65,11 @@ function createCustomButton(scene, text, x, y, width, height, backgroundColor, h
         if (buttonContainer.selected) {
             buttonBackground.clear();
             buttonBackground.fillStyle(COLORS.selected, 1);
-            buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 10);
+            buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 20);
         } else {
             buttonBackground.clear();
             buttonBackground.fillStyle(buttonContainer.defaultColor, 1);
-            buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 10);
+            buttonBackground.fillRoundedRect(-width / 2, -height / 2, width, height, 20);
         }
     });
 
@@ -94,7 +94,7 @@ class BaseScene extends Phaser.Scene {
     }
 
     init(data) {
-        this.displayTime = data.displayTime || 1000;
+        this.displayTime = data.displayTime || 2000;
         this.level = data.level || 1;
         this.gridSize = data.gridSize || 3;
         this.gameMode = data.gameMode || 'number';
@@ -102,28 +102,24 @@ class BaseScene extends Phaser.Scene {
 
     drawGrid() {
         const { width, height } = this.scale;
-        const gridWidth = width * 0.8;
-        const gridHeight = height * 0.8;
-        const startX = (width - gridWidth) / 2;
-        const startY = (height - gridHeight) / 2;
         const gridSize = this.gridSize;
-        const cellWidth = gridWidth / gridSize;
-        const cellHeight = gridHeight / gridSize;
+        const gridLength = width < height ? width * 0.8 : height * 0.8;
+        const startX = (width - gridLength) / 2;
+        const startY = (height - gridLength) / 2;
+        const cellSize = gridLength / gridSize;
 
         // グリッドの線を描画
         const graphics = this.add.graphics();
-        graphics.lineStyle(2, 0x000000, 1);
+        graphics.lineStyle(4, 0x000000, 1);
 
-        // 縦線
+        // 縦線と横線
         for (let i = 0; i <= gridSize; i++) {
-            graphics.moveTo(startX + i * cellWidth, startY);
-            graphics.lineTo(startX + i * cellWidth, startY + gridHeight);
-        }
-
-        // 横線
-        for (let i = 0; i <= gridSize; i++) {
-            graphics.moveTo(startX, startY + i * cellHeight);
-            graphics.lineTo(startX + gridWidth, startY + i * cellHeight);
+            // 縦線
+            graphics.moveTo(startX + i * cellSize, startY);
+            graphics.lineTo(startX + i * cellSize, startY + gridLength);
+            // 横線
+            graphics.moveTo(startX, startY + i * cellSize);
+            graphics.lineTo(startX + gridLength, startY + i * cellSize);
         }
 
         graphics.strokePath();
@@ -136,7 +132,7 @@ class BaseScene extends Phaser.Scene {
                 const particle = this.add.circle(
                     Phaser.Math.Between(0, width),
                     Phaser.Math.Between(0, height),
-                    Phaser.Math.Between(2, 6),
+                    Phaser.Math.Between(10, 20),
                     Phaser.Display.Color.RandomRGB().color
                 );
                 this.tweens.add({
@@ -161,8 +157,8 @@ class SelectionScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // タイトル
-        const titleFontSize = calculateResponsiveSize(this, 0.05);
-        this.add.text(width / 2, height * 0.05, 'げーむせっていをえらんでね', {
+        const titleFontSize = calculateResponsiveSize(this, 0.06);
+        this.add.text(width / 2, height * 0.1, 'げーむせっていをえらんでね', {
             fontSize: `${titleFontSize}px`,
             fill: '#000',
             align: 'center',
@@ -170,15 +166,15 @@ class SelectionScene extends Phaser.Scene {
         }).setOrigin(0.5, 0.5);
 
         // ボタン設定
-        const buttonWidth = width * 0.25;
-        const buttonHeight = height * 0.07;
-        const buttonSpacing = width * 0.02;
+        const buttonWidth = width * 0.4;
+        const buttonHeight = height * 0.1;
+        const buttonSpacing = height * 0.02;
 
         // 選択オプション
         const options = [
             {
                 title: 'ひょうじじかんをえらんでね',
-                yPosition: 0.15,
+                yPosition: 0.25,
                 items: [
                     { label: '0.5びょう', value: 500 },
                     { label: '1びょう', value: 1000 },
@@ -198,7 +194,7 @@ class SelectionScene extends Phaser.Scene {
             },
             {
                 title: 'ぐりっどさいずをえらんでね',
-                yPosition: 0.3,
+                yPosition: 0.45,
                 items: [
                     { label: '3x3', value: 3 },
                     { label: '4x4', value: 4 },
@@ -218,7 +214,7 @@ class SelectionScene extends Phaser.Scene {
             },
             {
                 title: 'げーむもーどをえらんでね',
-                yPosition: 0.45,
+                yPosition: 0.65,
                 items: [
                     { label: 'すうじもーど', value: 'number' },
                     { label: 'いろもーど', value: 'color' }
@@ -240,7 +236,7 @@ class SelectionScene extends Phaser.Scene {
         // オプションごとにボタンを生成
         options.forEach(option => {
             // セクションタイトル
-            const sectionFontSize = calculateResponsiveSize(this, 0.035);
+            const sectionFontSize = calculateResponsiveSize(this, 0.05);
             this.add.text(width / 2, height * option.yPosition, option.title, {
                 fontSize: `${sectionFontSize}px`,
                 fill: '#000',
@@ -248,9 +244,9 @@ class SelectionScene extends Phaser.Scene {
                 wordWrap: { width: width * 0.9 }
             }).setOrigin(0.5, 0.5);
 
-            const totalWidth = option.items.length * buttonWidth + (option.items.length - 1) * buttonSpacing;
-            let startX = (width - totalWidth) / 2 + buttonWidth / 2;
-            const startY = height * (option.yPosition + 0.05);
+            const totalHeight = option.items.length * buttonHeight + (option.items.length - 1) * buttonSpacing;
+            let startY = height * (option.yPosition + 0.05);
+            let startX = width / 2;
 
             option.buttons = [];
 
@@ -258,8 +254,8 @@ class SelectionScene extends Phaser.Scene {
                 const button = createCustomButton(
                     this,
                     item.label,
-                    startX + index * (buttonWidth + buttonSpacing),
-                    startY,
+                    startX,
+                    startY + index * (buttonHeight + buttonSpacing),
                     buttonWidth,
                     buttonHeight,
                     COLORS.primary,
@@ -274,14 +270,14 @@ class SelectionScene extends Phaser.Scene {
         });
 
         // スタートボタン
-        const startButtonWidth = width * 0.3;
-        const startButtonHeight = height * 0.07;
+        const startButtonWidth = width * 0.6;
+        const startButtonHeight = height * 0.12;
 
         const startButton = createCustomButton(
             this,
             'スタート',
             width / 2,
-            height * 0.7,
+            height * 0.85,
             startButtonWidth,
             startButtonHeight,
             COLORS.success,
@@ -331,7 +327,7 @@ class CountdownScene extends BaseScene {
         this.drawGrid();
 
         // カウントダウン数字
-        const countFontSize = calculateResponsiveSize(this, 0.1);
+        const countFontSize = calculateResponsiveSize(this, 0.2);
         this.countText = this.add.text(width / 2, height / 2, this.count, {
             fontSize: `${countFontSize}px`,
             fill: '#FF0000',
@@ -394,7 +390,7 @@ class GameScene extends BaseScene {
         const { width, height } = this.scale;
 
         // レベル表示
-        const levelFontSize = calculateResponsiveSize(this, 0.025);
+        const levelFontSize = calculateResponsiveSize(this, 0.04);
         this.add.text(width * 0.05, height * 0.05, `れべる: ${this.level}`, {
             fontSize: `${levelFontSize}px`,
             fill: '#000'
@@ -440,13 +436,13 @@ class GameScene extends BaseScene {
             cell.number = num;
 
             // 数字のテキストオブジェクトを作成
-            const numberFontSize = calculateResponsiveSize(this, 0.03);
+            const numberFontSize = calculateResponsiveSize(this, 0.06);
             const numberText = this.add.text(cell.x, cell.y, num, {
                 fontSize: `${numberFontSize}px`,
                 fill: '#fff',
                 backgroundColor: Phaser.Display.Color.IntegerToColor(COLORS.danger).rgba,
-                padding: { x: 5, y: 5 },
-                borderRadius: 5,
+                padding: { x: 10, y: 10 },
+                borderRadius: 10,
                 align: 'center'
             }).setOrigin(0.5, 0.5).setVisible(true); // 初期は表示
 
@@ -620,23 +616,21 @@ class GameScene extends BaseScene {
     drawGrid() {
         super.drawGrid();
         const { width, height } = this.scale;
-        const gridWidth = width * 0.8;
-        const gridHeight = height * 0.8;
-        const startX = (width - gridWidth) / 2;
-        const startY = (height - gridHeight) / 2;
         const gridSize = this.gridSize;
-        const cellWidth = gridWidth / gridSize;
-        const cellHeight = gridHeight / gridSize;
+        const gridLength = width < height ? width * 0.8 : height * 0.8;
+        const startX = (width - gridLength) / 2;
+        const startY = (height - gridLength) / 2;
+        const cellSize = gridLength / gridSize;
 
         // グリッドセルのクリックエリアを設定
         for (let row = 0; row < gridSize; row++) {
             for (let col = 0; col < gridSize; col++) {
-                const x = startX + col * cellWidth + cellWidth / 2;
-                const y = startY + row * cellHeight + cellHeight / 2;
+                const x = startX + col * cellSize + cellSize / 2;
+                const y = startY + row * cellSize + cellSize / 2;
 
                 // グリッドセルの透明なボタンを作成
-                const zone = this.add.zone(x, y, cellWidth, cellHeight)
-                    .setRectangleDropZone(cellWidth, cellHeight)
+                const zone = this.add.zone(x, y, cellSize, cellSize)
+                    .setRectangleDropZone(cellSize, cellSize)
                     .setInteractive({ useHandCursor: true });
 
                 // ホバー時のハイライト
@@ -658,8 +652,8 @@ class GameScene extends BaseScene {
                     col: col,
                     x: x,
                     y: y,
-                    width: cellWidth,
-                    height: cellHeight,
+                    width: cellSize,
+                    height: cellSize,
                     number: null, // 後で数字を割り当て
                     color: null,  // 後で色を割り当て
                     object: null, // テキストまたは色ブロックのオブジェクト
@@ -697,7 +691,7 @@ class ClearScene extends BaseScene {
         const { width, height } = this.scale;
 
         // クリアテキスト
-        const clearFontSize = calculateResponsiveSize(this, 0.05);
+        const clearFontSize = calculateResponsiveSize(this, 0.08);
         this.add.text(width / 2, height * 0.3, 'クリア！', {
             fontSize: `${clearFontSize}px`,
             fill: Phaser.Display.Color.IntegerToColor(COLORS.warning).rgba,
@@ -706,9 +700,9 @@ class ClearScene extends BaseScene {
         }).setOrigin(0.5, 0.5);
 
         // ランダムメッセージ
-        const messageFontSize = calculateResponsiveSize(this, 0.035);
+        const messageFontSize = calculateResponsiveSize(this, 0.06);
         const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
-        this.add.text(width / 2, height / 2, randomMessage, {
+        this.add.text(width / 2, height * 0.45, randomMessage, {
             fontSize: `${messageFontSize}px`,
             fill: '#000',
             align: 'center',
@@ -724,8 +718,8 @@ class ClearScene extends BaseScene {
             'つぎのれべる',
             width / 2,
             height * 0.65,
-            width * 0.3,
-            height * 0.07,
+            width * 0.6,
+            height * 0.12,
             COLORS.success,
             COLORS.successHover,
             () => {
@@ -756,8 +750,8 @@ class RetryScene extends BaseScene {
         const { width, height } = this.scale;
 
         // ゲームオーバーのテキスト
-        const gameOverFontSize = calculateResponsiveSize(this, 0.05);
-        this.add.text(width / 2, height * 0.3, 'ゲームオーバー', {
+        const gameOverFontSize = calculateResponsiveSize(this, 0.08);
+        this.add.text(width / 2, height * 0.2, 'ゲームオーバー', {
             fontSize: `${gameOverFontSize}px`,
             fill: '#FF0000',
             align: 'center',
@@ -770,13 +764,13 @@ class RetryScene extends BaseScene {
         // 正しい数字または色を全て表示
         this.grid.forEach(cell => {
             if (this.gameMode === 'number' && cell.number !== null) {
-                const numberFontSize = calculateResponsiveSize(this, 0.03);
+                const numberFontSize = calculateResponsiveSize(this, 0.06);
                 const numberText = this.add.text(cell.x, cell.y, cell.number, {
                     fontSize: `${numberFontSize}px`,
                     fill: '#fff',
                     backgroundColor: Phaser.Display.Color.IntegerToColor(COLORS.danger).rgba,
-                    padding: { x: 5, y: 5 },
-                    borderRadius: 5,
+                    padding: { x: 10, y: 10 },
+                    borderRadius: 10,
                     align: 'center'
                 }).setOrigin(0.5, 0.5).setVisible(true); // 正しい数字を表示
             } else if (this.gameMode === 'color' && cell.color !== null) {
@@ -790,7 +784,7 @@ class RetryScene extends BaseScene {
         this.wrongCells.forEach(wrongCell => {
             const cell = this.grid.find(c => c.row === wrongCell.row && c.col === wrongCell.col);
             if (cell) {
-                const xMarkFontSize = calculateResponsiveSize(this, 0.05);
+                const xMarkFontSize = calculateResponsiveSize(this, 0.1);
                 this.add.text(cell.x, cell.y, '×', {
                     fontSize: `${xMarkFontSize}px`,
                     fill: '#FF0000',
@@ -805,8 +799,8 @@ class RetryScene extends BaseScene {
             'もういちど',
             width / 2,
             height * 0.65,
-            width * 0.3,
-            height * 0.07,
+            width * 0.6,
+            height * 0.12,
             COLORS.danger,
             COLORS.dangerHover,
             () => {
@@ -825,8 +819,8 @@ class RetryScene extends BaseScene {
             'さいしょから',
             width / 2,
             height * 0.8,
-            width * 0.3,
-            height * 0.07,
+            width * 0.6,
+            height * 0.12,
             COLORS.info,
             COLORS.infoHover,
             () => {
@@ -851,8 +845,7 @@ const config = {
         height: window.innerHeight
     },
     // 解像度をデバイスのピクセル比に合わせる
-    resolution: window.devicePixelRatio,
-    pixelArt: true, // ピクセルアートモードを有効にすることで、ぼやけを軽減
+    resolution: window.devicePixelRatio
 };
 
 // ゲームインスタンスの作成
