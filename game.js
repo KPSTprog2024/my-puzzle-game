@@ -26,14 +26,15 @@ function createButton(scene, text, x, y, width, height, backgroundColor, hoverCo
         fontSize: `${fontSize}px`,
         fill: '#fff',
         backgroundColor: backgroundColor,
-        padding: { x: 10, y: 5 },
+        padding: { x: 10, y: 10 },
         borderRadius: 10,
         align: 'center',
-        wordWrap: { width: width - 20 }
+        fixedWidth: width,
+        fixedHeight: height,
+        valign: 'middle' // 垂直方向の中央揃え
     })
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true })
-        .setFixedSize(width, height);
+        .setOrigin(0.5, 0.5) // テキストの中心をボタンの中心に設定
+        .setInteractive({ useHandCursor: true });
 
     button.defaultColor = backgroundColor;
     button.hoverColor = hoverColor;
@@ -148,7 +149,7 @@ class SelectionScene extends Phaser.Scene {
             fill: '#000',
             align: 'center',
             wordWrap: { width: width * 0.9 }
-        }).setOrigin(0.5);
+        }).setOrigin(0.5, 0.5);
 
         // ボタン設定
         const buttonWidth = width * 0.25;
@@ -227,7 +228,7 @@ class SelectionScene extends Phaser.Scene {
                 fill: '#000',
                 align: 'center',
                 wordWrap: { width: width * 0.9 }
-            }).setOrigin(0.5);
+            }).setOrigin(0.5, 0.5);
 
             const totalWidth = option.items.length * buttonWidth + (option.items.length - 1) * buttonSpacing;
             let startX = (width - totalWidth) / 2 + buttonWidth / 2;
@@ -317,7 +318,7 @@ class CountdownScene extends BaseScene {
             fontSize: `${countFontSize}px`,
             fill: '#FF0000',
             align: 'center'
-        }).setOrigin(0.5);
+        }).setOrigin(0.5, 0.5);
 
         // カウントダウン数字にアニメーションを追加
         this.tweens.add({
@@ -430,7 +431,7 @@ class GameScene extends BaseScene {
                 borderRadius: 5,
                 align: 'center',
                 wordWrap: { width: cell.width * 0.8 }
-            }).setOrigin(0.5).setVisible(true); // 初期は表示
+            }).setOrigin(0.5, 0.5).setVisible(true); // 初期は表示
 
             cell.object = numberText;
         });
@@ -472,7 +473,7 @@ class GameScene extends BaseScene {
 
             // 色ブロックのオブジェクトを作成（初期は表示）
             const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, color)
-                .setOrigin(0.5)
+                .setOrigin(0.5, 0.5)
                 .setInteractive()
                 .setAlpha(1); // 初期は表示
             cell.object = colorBlock;
@@ -685,7 +686,7 @@ class ClearScene extends BaseScene {
             fill: COLORS.warning,
             align: 'center',
             wordWrap: { width: width * 0.9 }
-        }).setOrigin(0.5);
+        }).setOrigin(0.5, 0.5);
 
         // ランダムメッセージ
         const messageFontSize = calculateResponsiveSize(this, 0.035);
@@ -695,7 +696,7 @@ class ClearScene extends BaseScene {
             fill: '#000',
             align: 'center',
             wordWrap: { width: width * 0.9 }
-        }).setOrigin(0.5);
+        }).setOrigin(0.5, 0.5);
 
         // エフェクト（簡易的な花火）
         this.createParticleEffect();
@@ -744,7 +745,7 @@ class RetryScene extends BaseScene {
             fill: '#FF0000',
             align: 'center',
             wordWrap: { width: width * 0.9 }
-        }).setOrigin(0.5);
+        }).setOrigin(0.5, 0.5);
 
         // グリッドの描画
         this.drawGrid();
@@ -761,10 +762,10 @@ class RetryScene extends BaseScene {
                     borderRadius: 5,
                     align: 'center',
                     wordWrap: { width: cell.width * 0.8 }
-                }).setOrigin(0.5).setVisible(true); // 正しい数字を表示
+                }).setOrigin(0.5, 0.5).setVisible(true); // 正しい数字を表示
             } else if (this.gameMode === 'color' && cell.color !== null) {
                 const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, cell.color)
-                    .setOrigin(0.5)
+                    .setOrigin(0.5, 0.5)
                     .setAlpha(1); // 正しい色ブロックを表示
             }
         });
@@ -778,12 +779,9 @@ class RetryScene extends BaseScene {
                     fontSize: `${xMarkFontSize}px`,
                     fill: '#FF0000',
                     align: 'center'
-                }).setOrigin(0.5);
+                }).setOrigin(0.5, 0.5);
             }
         });
-
-        // エフェクト（簡易的な花火）
-        this.createParticleEffect();
 
         // 「もういちど」ボタン
         const retryButton = createButton(
@@ -835,7 +833,8 @@ const config = {
         autoCenter: Phaser.Scale.CENTER_BOTH,
         width: window.innerWidth,
         height: window.innerHeight
-    }
+    },
+    resolution: window.devicePixelRatio // 解像度をデバイスのピクセル比に合わせる
 };
 
 // ゲームインスタンスの作成
