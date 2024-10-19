@@ -13,18 +13,26 @@ const COLORS = {
     selectedHover: '#FB8C00'   // 選択されたボタンのホバー時の色
 };
 
+// フォントサイズとボタンサイズの調整関数
+function calculateResponsiveSize(scene, baseSize) {
+    const { width, height } = scene.scale;
+    const minDimension = Math.min(width, height);
+    return Math.max(Math.round(minDimension * baseSize), 12); // 最小フォントサイズを12pxに設定
+}
+
 function createButton(scene, text, x, y, width, height, backgroundColor, hoverColor, onClick) {
+    const fontSize = calculateResponsiveSize(scene, 0.02); // ベースのフォントサイズを調整
     const button = scene.add.text(x, y, text, {
-        fontSize: `${height * 0.5}px`,
+        fontSize: `${fontSize}px`,
         fill: '#fff',
         backgroundColor: backgroundColor,
-        padding: { x: 20, y: 10 },
+        padding: { x: 10, y: 5 },
         borderRadius: 10,
         align: 'center',
-        wordWrap: { width: width - 40 }
+        wordWrap: { width: width - 20 }
     })
         .setOrigin(0.5)
-        .setInteractive()
+        .setInteractive({ useHandCursor: true })
         .setFixedSize(width, height);
 
     button.defaultColor = backgroundColor;
@@ -134,17 +142,18 @@ class SelectionScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // タイトル
+        const titleFontSize = calculateResponsiveSize(this, 0.05);
         this.add.text(width / 2, height * 0.05, 'げーむせっていをえらんでね', {
-            fontSize: `${height * 0.05}px`,
+            fontSize: `${titleFontSize}px`,
             fill: '#000',
             align: 'center',
-            wordWrap: { width: width * 0.8 }
+            wordWrap: { width: width * 0.9 }
         }).setOrigin(0.5);
 
         // ボタン設定
         const buttonWidth = width * 0.25;
         const buttonHeight = height * 0.07;
-        const buttonSpacing = width * 0.05;
+        const buttonSpacing = width * 0.02;
 
         // 選択オプション
         const options = [
@@ -212,11 +221,12 @@ class SelectionScene extends Phaser.Scene {
         // オプションごとにボタンを生成
         options.forEach(option => {
             // セクションタイトル
+            const sectionFontSize = calculateResponsiveSize(this, 0.035);
             this.add.text(width / 2, height * option.yPosition, option.title, {
-                fontSize: `${height * 0.03}px`,
+                fontSize: `${sectionFontSize}px`,
                 fill: '#000',
                 align: 'center',
-                wordWrap: { width: width * 0.8 }
+                wordWrap: { width: width * 0.9 }
             }).setOrigin(0.5);
 
             const totalWidth = option.items.length * buttonWidth + (option.items.length - 1) * buttonSpacing;
@@ -302,8 +312,9 @@ class CountdownScene extends BaseScene {
         this.drawGrid();
 
         // カウントダウン数字
+        const countFontSize = calculateResponsiveSize(this, 0.1);
         this.countText = this.add.text(width / 2, height / 2, this.count, {
-            fontSize: `${height * 0.1}px`,
+            fontSize: `${countFontSize}px`,
             fill: '#FF0000',
             align: 'center'
         }).setOrigin(0.5);
@@ -364,8 +375,9 @@ class GameScene extends BaseScene {
         const { width, height } = this.scale;
 
         // レベル表示
+        const levelFontSize = calculateResponsiveSize(this, 0.025);
         this.add.text(width * 0.05, height * 0.05, `れべる: ${this.level}`, {
-            fontSize: `${height * 0.025}px`,
+            fontSize: `${levelFontSize}px`,
             fill: '#000'
         }).setOrigin(0, 0);
 
@@ -409,11 +421,12 @@ class GameScene extends BaseScene {
             cell.number = num;
 
             // 数字のテキストオブジェクトを作成
+            const numberFontSize = calculateResponsiveSize(this, 0.03);
             const numberText = this.add.text(cell.x, cell.y, num, {
-                fontSize: `${cell.height * 0.3}px`,
+                fontSize: `${numberFontSize}px`,
                 fill: '#fff',
                 backgroundColor: COLORS.danger,
-                padding: { x: 10, y: 10 },
+                padding: { x: 5, y: 5 },
                 borderRadius: 5,
                 align: 'center',
                 wordWrap: { width: cell.width * 0.8 }
@@ -606,7 +619,7 @@ class GameScene extends BaseScene {
                 // グリッドセルの透明なボタンを作成
                 const zone = this.add.zone(x, y, cellWidth, cellHeight)
                     .setRectangleDropZone(cellWidth, cellHeight)
-                    .setInteractive();
+                    .setInteractive({ useHandCursor: true });
 
                 // ホバー時のハイライト
                 zone.on('pointerover', () => {
@@ -666,20 +679,22 @@ class ClearScene extends BaseScene {
         const { width, height } = this.scale;
 
         // クリアテキスト
+        const clearFontSize = calculateResponsiveSize(this, 0.05);
         this.add.text(width / 2, height * 0.3, 'クリア！', {
-            fontSize: `${height * 0.05}px`,
+            fontSize: `${clearFontSize}px`,
             fill: COLORS.warning,
             align: 'center',
-            wordWrap: { width: width * 0.8 }
+            wordWrap: { width: width * 0.9 }
         }).setOrigin(0.5);
 
         // ランダムメッセージ
+        const messageFontSize = calculateResponsiveSize(this, 0.035);
         const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
         this.add.text(width / 2, height / 2, randomMessage, {
-            fontSize: `${height * 0.035}px`,
+            fontSize: `${messageFontSize}px`,
             fill: '#000',
             align: 'center',
-            wordWrap: { width: width * 0.8 }
+            wordWrap: { width: width * 0.9 }
         }).setOrigin(0.5);
 
         // エフェクト（簡易的な花火）
@@ -723,11 +738,12 @@ class RetryScene extends BaseScene {
         const { width, height } = this.scale;
 
         // ゲームオーバーのテキスト
+        const gameOverFontSize = calculateResponsiveSize(this, 0.05);
         this.add.text(width / 2, height * 0.3, 'ゲームオーバー', {
-            fontSize: `${height * 0.05}px`,
+            fontSize: `${gameOverFontSize}px`,
             fill: '#FF0000',
             align: 'center',
-            wordWrap: { width: width * 0.8 }
+            wordWrap: { width: width * 0.9 }
         }).setOrigin(0.5);
 
         // グリッドの描画
@@ -736,11 +752,12 @@ class RetryScene extends BaseScene {
         // 正しい数字または色を全て表示
         this.grid.forEach(cell => {
             if (this.gameMode === 'number' && cell.number !== null) {
+                const numberFontSize = calculateResponsiveSize(this, 0.03);
                 const numberText = this.add.text(cell.x, cell.y, cell.number, {
-                    fontSize: `${cell.height * 0.3}px`,
+                    fontSize: `${numberFontSize}px`,
                     fill: '#fff',
                     backgroundColor: COLORS.danger,
-                    padding: { x: 10, y: 10 },
+                    padding: { x: 5, y: 5 },
                     borderRadius: 5,
                     align: 'center',
                     wordWrap: { width: cell.width * 0.8 }
@@ -756,8 +773,9 @@ class RetryScene extends BaseScene {
         this.wrongCells.forEach(wrongCell => {
             const cell = this.grid.find(c => c.row === wrongCell.row && c.col === wrongCell.col);
             if (cell) {
+                const xMarkFontSize = calculateResponsiveSize(this, 0.05);
                 this.add.text(cell.x, cell.y, '×', {
-                    fontSize: `${height * 0.05}px`,
+                    fontSize: `${xMarkFontSize}px`,
                     fill: '#FF0000',
                     align: 'center'
                 }).setOrigin(0.5);
