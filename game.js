@@ -8,7 +8,9 @@ const COLORS = {
     dangerHover: '#D84315',
     info: '#2196F3',
     infoHover: '#1976D2',
-    warning: '#FFD700'
+    warning: '#FFD700',
+    selected: '#FF9800',       // 選択されたボタンの色
+    selectedHover: '#FB8C00'   // 選択されたボタンのホバー時の色
 };
 
 function createButton(scene, text, x, y, width, height, backgroundColor, hoverColor, onClick) {
@@ -25,12 +27,24 @@ function createButton(scene, text, x, y, width, height, backgroundColor, hoverCo
         .setInteractive()
         .setFixedSize(width, height);
 
+    button.defaultColor = backgroundColor;
+    button.hoverColor = hoverColor;
+    button.selected = false;
+
     button.on('pointerover', () => {
-        button.setStyle({ backgroundColor: hoverColor });
+        if (button.selected) {
+            button.setStyle({ backgroundColor: COLORS.selectedHover });
+        } else {
+            button.setStyle({ backgroundColor: button.hoverColor });
+        }
     });
 
     button.on('pointerout', () => {
-        button.setStyle({ backgroundColor: backgroundColor });
+        if (button.selected) {
+            button.setStyle({ backgroundColor: COLORS.selected });
+        } else {
+            button.setStyle({ backgroundColor: button.defaultColor });
+        }
     });
 
     button.on('pointerdown', () => {
@@ -142,18 +156,17 @@ class SelectionScene extends Phaser.Scene {
                     { label: '1びょう', value: 1000 },
                     { label: '3びょう', value: 3000 }
                 ],
-                selectedValue: null,
-                selectedButton: null,
-                buttons: [],
+                buttonsArray: 'timeButtons',
                 onSelect: (button, value) => {
                     this.selectedTime = value;
                     this.timeButtons.forEach(btn => {
-                        btn.setStyle({ backgroundColor: COLORS.primary });
+                        btn.selected = false;
+                        btn.setStyle({ backgroundColor: btn.defaultColor });
                     });
-                    button.setStyle({ backgroundColor: COLORS.success });
+                    button.selected = true;
+                    button.setStyle({ backgroundColor: COLORS.selected });
                     this.events.emit('selectionChanged');
-                },
-                buttonsArray: 'timeButtons'
+                }
             },
             {
                 title: 'ぐりっどさいずをえらんでね',
@@ -163,18 +176,17 @@ class SelectionScene extends Phaser.Scene {
                     { label: '4x4', value: 4 },
                     { label: '5x5', value: 5 }
                 ],
-                selectedValue: null,
-                selectedButton: null,
-                buttons: [],
+                buttonsArray: 'gridSizeButtons',
                 onSelect: (button, value) => {
                     this.selectedGridSize = value;
                     this.gridSizeButtons.forEach(btn => {
-                        btn.setStyle({ backgroundColor: COLORS.primary });
+                        btn.selected = false;
+                        btn.setStyle({ backgroundColor: btn.defaultColor });
                     });
-                    button.setStyle({ backgroundColor: COLORS.success });
+                    button.selected = true;
+                    button.setStyle({ backgroundColor: COLORS.selected });
                     this.events.emit('selectionChanged');
-                },
-                buttonsArray: 'gridSizeButtons'
+                }
             },
             {
                 title: 'げーむもーどをえらんでね',
@@ -183,18 +195,17 @@ class SelectionScene extends Phaser.Scene {
                     { label: 'すうじもーど', value: 'number' },
                     { label: 'いろもーど', value: 'color' }
                 ],
-                selectedValue: null,
-                selectedButton: null,
-                buttons: [],
+                buttonsArray: 'gameModeButtons',
                 onSelect: (button, value) => {
                     this.selectedGameMode = value;
                     this.gameModeButtons.forEach(btn => {
-                        btn.setStyle({ backgroundColor: COLORS.primary });
+                        btn.selected = false;
+                        btn.setStyle({ backgroundColor: btn.defaultColor });
                     });
-                    button.setStyle({ backgroundColor: COLORS.success });
+                    button.selected = true;
+                    button.setStyle({ backgroundColor: COLORS.selected });
                     this.events.emit('selectionChanged');
-                },
-                buttonsArray: 'gameModeButtons'
+                }
             }
         ];
 
@@ -446,11 +457,11 @@ class GameScene extends BaseScene {
             const cell = this.grid[gridIndex];
             cell.color = color;
 
-            // 色ブロックのオブジェクトを作成（初期は非表示）
+            // 色ブロックのオブジェクトを作成（初期は表示）
             const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, color)
                 .setOrigin(0.5)
                 .setInteractive()
-                .setAlpha(0); // 初期は非表示
+                .setAlpha(1); // 初期は表示
             cell.object = colorBlock;
         });
 
@@ -550,7 +561,7 @@ class GameScene extends BaseScene {
 
             // 色モードではタッチが正しい場合に色ブロックを表示
             clickedCell.clicked = true;
-            clickedCell.object.setAlpha(1); // 表示
+            clickedCell.object.setVisible(true); // 表示
             clickedCell.zone.disableInteractive();
 
             this.tweens.add({
