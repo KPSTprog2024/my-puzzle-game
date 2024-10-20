@@ -547,7 +547,8 @@ class GameScene extends BaseScene {
                             displayTime: this.displayTime,
                             level: this.level,
                             gridSize: this.gridSize,
-                            gameMode: this.gameMode
+                            gameMode: this.gameMode,
+                            grid: this.grid
                         });
                     }, [], this);
                 }
@@ -608,7 +609,8 @@ class GameScene extends BaseScene {
                         displayTime: this.displayTime,
                         level: this.level,
                         gridSize: this.gridSize,
-                        gameMode: this.gameMode
+                        gameMode: this.gameMode,
+                        grid: this.grid
                     });
                 }, [], this);
             }
@@ -675,6 +677,7 @@ class ClearScene extends BaseScene {
 
     init(data) {
         super.init(data);
+        this.grid = data.grid; // グリッドデータを受け取る
         this.messages = [
             'すごい！',
             'よくできた！',
@@ -691,6 +694,28 @@ class ClearScene extends BaseScene {
 
     create() {
         const { width, height } = this.scale;
+
+        // グリッドの描画
+        this.drawGrid();
+
+        // 正しい数字または色を全て表示
+        this.grid.forEach(cell => {
+            if (this.gameMode === 'number' && cell.number !== null) {
+                const numberFontSize = calculateResponsiveSize(this, 0.06);
+                const numberText = this.add.text(cell.x, cell.y, cell.number, {
+                    fontSize: `${numberFontSize}px`,
+                    fill: '#fff',
+                    backgroundColor: Phaser.Display.Color.IntegerToColor(COLORS.success).rgba,
+                    padding: { x: 10, y: 10 },
+                    borderRadius: 10,
+                    align: 'center'
+                }).setOrigin(0.5, 0.5).setVisible(true);
+            } else if (this.gameMode === 'color' && cell.color !== null) {
+                const colorBlock = this.add.rectangle(cell.x, cell.y, cell.width * 0.8, cell.height * 0.8, cell.color)
+                    .setOrigin(0.5, 0.5)
+                    .setAlpha(1);
+            }
+        });
 
         // クリアテキスト
         const clearFontSize = calculateResponsiveSize(this, 0.08);
