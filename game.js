@@ -694,7 +694,7 @@ class ClearScene extends BaseScene {
 
         // クリアテキスト
         const clearFontSize = calculateResponsiveSize(this, 0.08);
-        this.add.text(width / 2, height * 0.3, 'クリア！', {
+        this.add.text(width / 2, height * 0.2, 'クリア！', {
             fontSize: `${clearFontSize}px`,
             fill: Phaser.Display.Color.IntegerToColor(COLORS.warning).rgba,
             align: 'center',
@@ -704,7 +704,7 @@ class ClearScene extends BaseScene {
         // ランダムメッセージ
         const messageFontSize = calculateResponsiveSize(this, 0.06);
         const randomMessage = Phaser.Utils.Array.GetRandom(this.messages);
-        this.add.text(width / 2, height * 0.45, randomMessage, {
+        this.add.text(width / 2, height * 0.35, randomMessage, {
             fontSize: `${messageFontSize}px`,
             fill: '#000',
             align: 'center',
@@ -714,14 +714,40 @@ class ClearScene extends BaseScene {
         // エフェクト（簡易的な花火）
         this.createParticleEffect();
 
+        // ボタンのサイズと位置
+        const buttonWidth = width * 0.4;
+        const buttonHeight = height * 0.1;
+        const buttonSpacing = width * 0.05;
+        const buttonYPosition = height * 0.6;
+
+        // 「もういちど」ボタン
+        const retryButton = createCustomButton(
+            this,
+            'もういちど',
+            width / 2 - buttonWidth / 2 - buttonSpacing / 2,
+            buttonYPosition,
+            buttonWidth,
+            buttonHeight,
+            COLORS.info,
+            COLORS.infoHover,
+            () => {
+                this.scene.start('CountdownScene', {
+                    displayTime: this.displayTime,
+                    level: this.level,
+                    gridSize: this.gridSize,
+                    gameMode: this.gameMode
+                });
+            }
+        );
+
         // 「つぎのれべる」ボタン
         const nextLevelButton = createCustomButton(
             this,
             'つぎのれべる',
-            width / 2,
-            height * 0.65,
-            width * 0.6,
-            height * 0.12,
+            width / 2 + buttonWidth / 2 + buttonSpacing / 2,
+            buttonYPosition,
+            buttonWidth,
+            buttonHeight,
             COLORS.success,
             COLORS.successHover,
             () => {
